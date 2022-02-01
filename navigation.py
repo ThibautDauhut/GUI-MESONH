@@ -61,10 +61,11 @@ import lecture_surfex
 
 
 #################### Creating App Object ############################               
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css'] #ou bien https://intra.cnrm.meteo.fr/MeteopoleX/css.css
+#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css'] #ou bien https://intra.cnrm.meteo.fr/MeteopoleX/css.css
+external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css']
 # C'est la css qui va permettre la mise en page
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets,suppress_callback_exceptions=True)
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets,suppress_callback_exceptions=True,title='MeteopoleX')
 app.css.config.serve_locally = True
 app.scripts.config.serve_locally = True
 server=app.server
@@ -175,6 +176,12 @@ dico_params = {
                 "title": "Cumuls du pluie sur 30 min",
                 "unit" : "cm"
                 },
+        "altitude_CL": {
+                "index_obs" : "",
+                "index_model" : "",
+                "title": "Altitude de la couche limite",
+                "unit" : "m"
+                },
         }
 
 # Ce dictionnaire rassemble les spécificités de chaque paramètres tracés. Les 2 'index' sont les noms donnés sur AIDA au paramètre en question, dans les observations et dans les modèles. 
@@ -200,7 +207,7 @@ dico_model={"MésoNH_Arp":
                 {'name':'Tf',
                  'color':'gold'}}
 
-params = ["tmp_2m", "tmp_10m","hum_rel","vent_ff10m","flx_mvt","flx_chaleur_sens","flx_chaleur_lat","SWD","LWU","t_surface","t-1","hu_couche1","cumul_RR"]
+params = ["tmp_2m", "tmp_10m","hum_rel","vent_ff10m","flx_mvt","flx_chaleur_sens","flx_chaleur_lat","SWD","LWU","t_surface","t-1","hu_couche1","cumul_RR","altitude_CL"]
 # C'est la liste de tous les paramètres qui vont être tracés. Pour toute modification de cette liste, penser à modifier le dico_params en conséquence.
         
 models = ["Gt", "Rt","Tf"]
@@ -278,7 +285,6 @@ start_day=yesterday # Période par défaut : hier et aujourd'hui
 data, chart, graph = selection_donnees(start_day,end_day)
 data_mnh=lecture_mesoNH.mesoNH(start_day,end_day,models,params) #Pour ajouter un nouveau run de MesoNH, changer la liste models : en créer une autre
 data_surfex=lecture_surfex.surfex(start_day,end_day,models,params)
-
 
 ############### Widgets ###############
 
@@ -549,7 +555,7 @@ menu = html.Div([
 
 
 obs_modeles_layout = html.Div([
-    html.H1('Comparaisons des observations de Météopole flux et des modèles'),
+    html.H1('MeteopoleX'),
     menu,
     calendrier,
     html.Div([multi_select_line_chart_obs,multi_select_line_chart_ARP,multi_select_line_chart_ARO,

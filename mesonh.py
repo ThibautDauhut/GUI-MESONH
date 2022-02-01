@@ -233,7 +233,7 @@ class MesoNH:
             - None 
             
         Couplage de MesoNH avec les données d'un modèle atmosphérique (AROME ou 
-        ARPEGE)
+        ARPEGE) dans PRE_IDEA1.
         """
         
         data = self.coupl_data

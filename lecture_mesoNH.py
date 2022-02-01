@@ -63,7 +63,7 @@ def mesoNH (start_day,end_day,models,params):
                                 if param == "flx_chaleur_sens":
                                     data_mnh[today_str][model][param] = f['Q0___PROC1'][0,:,0,0,0].data[:96]*f['RHODREF'][2,0,0]*1004
                                 if param == "flx_chaleur_lat":
-                                    data_mnh[today_str][model][param] = f['E0___PROC1'][0,:,0,0,0].data[:96]*f['RHODREF'][2,0,0]*2.501*10e6
+                                    data_mnh[today_str][model][param] = f['E0___PROC1'][0,:,0,0,0].data[:96]*f['RHODREF'][2,0,0]*2.501*10e3 #TODO facteur a corriger
                                 if param == "LWU":
                                     data_mnh[today_str][model][param] = f['LWU___PROC1'][0,:,2,0,0].data[:96]
                                 if param == "SWD":
@@ -75,6 +75,8 @@ def mesoNH (start_day,end_day,models,params):
 #                                if param == "t-1":
 #                                    f = nc.Dataset('/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/2021010400/MESONH_Gt_2021010400.nc')
 #                                    data_mnh[today_str][model][param] = f['TG1P1'][1,1].data[:96]
+                                if param == "altitude_CL" :
+                                    data_mnh[today_str][model][param] = f['HBLTOP'].data[:96]
 
 
 
