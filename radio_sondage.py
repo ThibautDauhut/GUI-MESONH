@@ -24,10 +24,14 @@ def radio_sondage(day,models,params_rs,heures):
     
     for model in models:
         try :
-            f = nc.Dataset('/d0/MeteopoleX/manip/METEOPOLEX/OUTPUT/MESONH/OPER/'+today_str+'00/MESONH_'+model+'_'+today_str+'00.000.nc')
-            # ou bien /home/manip/METEOPOLEX/OUTPUT/MESONH
+            f = nc.Dataset('/d0/MeteopoleX/models/runs/OUTPUT/MESONH/OPER/'+today_str+'00/MESONH_'+model+'_'+today_str+'00.000.nc')
+
+            groupMEAN = '/LES_budgets/Mean/Cartesian/Not_time_averaged/Not_normalized/cart/'
+
+
+            # ou bien /home/models/OUTPUT/MESONH
             if 'level' not in data_rs:
-                data_rs['level']= f['level'][:].data
+                data_rs['level']= f.variables['level'][:]
                 
             if model not in data_rs :
                 data_rs[model]={}
@@ -40,17 +44,17 @@ def radio_sondage(day,models,params_rs,heures):
                             if param not in data_rs[model][heure]:
                                 data_rs[model][heure][param]={}
                                 if param == "Température" :
-                                    P = f['MEAN_PRE___PROC1'][0,heures[heure]['num_val'],:,0,0].data[:]
+                                    P = f[groupMEAN].variables['MEAN_PRE'][heures[heure]['num_val'],:]
                                     D = (100000/P)**(2/7)  
-                                    data_rs[model][heure][param]= (f['MEAN_TH___PROC1'][0,heures[heure]['num_val'],:,0,0].data[:] / D)-273.15
+                                    data_rs[model][heure][param]= (f[groupMEAN].variables['MEAN_TH'][heures[heure]['num_val'],:] / D)-273.15
                                     
                                 if param == "Humidité relative":
-                                    data_rs[model][heure][param]= f["MEAN_REHU___PROC1"][0,heures[heure]['num_val'],:,0,0].data[:]
+                                    data_rs[model][heure][param]= f[groupMEAN].variables['MEAN_REHU'][heures[heure]['num_val'],:]
                                     
                                 if param == "Vent":
-                                    U=f['MEAN_U___PROC1'][0,heures[heure]['num_val'],:,0,0].data[:]
-                                    V=f['MEAN_V___PROC1'][0,heures[heure]['num_val'],:,0,0].data[:]
-                                    data_rs[model][heure][param]=(U**2+V**2)**(1/2)
+                                    #U=f['MEAN_U___PROC1'][0,heures[heure]['num_val'],:,0,0].data[:]
+                                    #V=f['MEAN_V___PROC1'][0,heures[heure]['num_val'],:,0,0].data[:]
+                                    data_rs[model][heure][param]=f[groupMEAN].variables['MEANWIND'][heures[heure]['num_val'],:]
         except FileNotFoundError:
             pass
     
