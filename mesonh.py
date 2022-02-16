@@ -17,8 +17,8 @@ import shortuuid
 import read_aida
 import glob
 
-path = '/d0/MeteopoleX/manip/METEOPOLEX/MNH-V5-4-4/MY_RUN/OPER/'  # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/web_20210402/'
-path_output = '/d0/MeteopoleX/manip/METEOPOLEX/OUTPUT/MESONH/'  # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/'
+path = '/d0/MeteopoleX/models/MNH-V5-5-0/MY_RUN/OPER/'  # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/web_20210402/'
+path_output = '/d0/MeteopoleX/models/runs/OUTPUT/MESONH/'  # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/'
 
 
 class MesoNH:
@@ -141,7 +141,9 @@ class MesoNH:
             import epygram
             epygram.init_env()
             date_epygram = self.date_run.strftime('%Y%m%d')
-            f = epygram.formats.resource('/cnrm/ktrm/stagiaire/mosai_2021/DATA/AROME/' + date_epygram + 'T0000P/forecast/historic.surfex.tlse-1300m000+0000:00.fa', 'r')
+            yyyymm_epy = self.date_run.strftime('%Y%m')
+            f = epygram.formats.resource('/cnrm/ktrm/manip/METEOPOLEX/AROME/Toulouse/' + yyyymm_epy + '/historic.surfex.tlse-1300m000+0000:00_'+date_epygram+'.fa', 'r')
+#            f = epygram.formats.resource('/cnrm/phynh/data1/rodierq/LEO/' + yyyymm_epy + '/historic.surfex.tlse-1300m000+0000:00_'+date_epygram+'.fa', 'r')
             variables = ['X001WG1', 'X001WG2', 'X001WG3', 'X001WGI1', 'X001WGI2']
             Dvar={}
             for var in variables:
@@ -334,7 +336,7 @@ class MesoNH:
            Suppression du dossier de simulation
         """
         
-        call('rm -rf ' + self.path, shell='True')
+#        call('rm -rf ' + self.path, shell='True')
     
     
     def get_initialize_file(self, model_couplage, date_run):
@@ -352,8 +354,11 @@ class MesoNH:
         """
         
         if model_couplage == "AROME":
-            date_run_arome = date_run.strftime('%Y%m%dT%H')
-            file = '/cnrm/ktrm/stagiaire/mosai_2021/DATA/AROME/' + date_run_arome + '00P/forecast/netcdf_tlse.tar.arome.netcdf'
+            date_run_arome = date_run.strftime('%Y%m%d')
+            print("RUN AROME COUPLAGE : ", date_run_arome)
+            yyyymm_aro = date_run.strftime('%Y%m')
+            file = '/cnrm/ktrm/manip/METEOPOLEX/AROME/Toulouse/' + yyyymm_aro + '/netcdf_tlse.tar.arome_'+date_run_arome+'.netcdf'
+#            file = '/cnrm/phynh/data1/rodierq/LEO/' + yyyymm_aro + '/netcdf_tlse.tar.arome_'+date_run_arome+'.netcdf'
         elif model_couplage == "ARPEGE":
             yearmonth = date_run.strftime('%Y%m')
             date_run_arpege = date_run.strftime('%Y%m%d%H')
@@ -817,10 +822,15 @@ class MesoNH:
 #######################
         
 def three_months():
-    date_depart = datetime.fromisoformat('2021-01-01T00:00:00')
-    for i in range(120):
+#DATE DE DEPART DU RUN
+    date_depart = datetime.fromisoformat('2022-02-01T00:00:00')
+
+#NOMBRE DE JOURS A PARTIR DE LA DATE DE DEPART ????
+    for i in range(15):
+
         date_run = date_depart + timedelta(days=i)
-        for model in ['AROME', 'ARPEGE']:
+#        for model in ['AROME', 'ARPEGE']:
+        for model in ['AROME']:
             try:
                 MesoNH(date_run=str(date_run), model_couplage=model)
             except:

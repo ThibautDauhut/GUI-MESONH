@@ -11,12 +11,20 @@ import time
 import datetime
 from datetime import timedelta,date
 
+#from datetime import datetime
+
+import matplotlib.dates as mdates
+
 import flask
 
 # Tous les programmes qui permettent de récupérer les données
 import read_aida
 import lecture_mesoNH
 import lecture_surfex
+
+# Besoin de l'utilisation de dataframes pour les calculs de différences entre obs/modèle (grille temporelle différente)
+import pandas as pd
+
 
 
 #####################################################################
@@ -174,7 +182,7 @@ dico_params = {
                 "index_obs" : "prp_rr_min_c2_%60_Som_%1800",
                 "index_model" : "",
                 "title": "Cumuls du pluie sur 30 min",
-                "unit" : "cm"
+                "unit" : "mm"
                 },
         "altitude_CL": {
                 "index_obs" : "",
@@ -494,7 +502,7 @@ def update_line(reseau1,reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_use
                     pass
 		# Le retour du try/except pour éviter que le script ne se bloque.
 
-
+#    print("--------------------------------------   PRINT MNH  ----------------------------------------- ", data_mnh[today_str]['Rt']['tmp_2m'])
 
 ## Pour les courbes de Surfex : 
     courbe_affichee_surfex=[]    
@@ -546,6 +554,7 @@ row2 = html.Div(children=all_graphs, className="twelve columns")
 
 menu = html.Div([
         dcc.Link('Notice__', href='/MeteopoleX/notice'),
+        dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
         dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
         dcc.Link('__Rejeu MésoNH__', href='/MeteopoleX/mesoNH'),
         dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
@@ -712,15 +721,452 @@ notice_layout = html.Div([
 # Mise en page finale
 
 
+
+
+
+
+
+
+
+
+
+##############################
+#
+#   Biais Obs/Modèles
+#
+##############################
+
+
+
+############### Calcul des biais #########
+
+def calcul_biais(start_day,end_day):
+
+    doy1 = datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%j')
+    doy2 = datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)).strftime('%j')
+
+    chartB = {}
+    graphB = {}
+
+    biais = {}
+
+    #création d'un dataframe vide avec les valeurs des dates de la période (start_day,end_day), toutes les heures.
+    dt=mdates.num2date(mdates.drange(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)),datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)),datetime.timedelta(hours=1)))
+
+    dataallyear = [i.replace(tzinfo=None) for i in dt]
+    dataframe_sanstrou = pd.DataFrame(index=dataallyear)   
+
+
+    for param in params:
+#        print("Quel param? ", param)
+
+        if param not in biais:
+            biais[param] = {}
+#            print("création du dico param : ", param)
+
+        for model in models:
+
+            if model not in biais[param]:
+                biais[param][model] = {}
+#                print("création du dico model : ", model)
+
+                for reseau in reseaux:
+
+                    if reseau not in biais[param][model]:
+                       biais[param][model][reseau] = {}
+#                        print("création du dico reseau : ", reseau)
+
+                    if model != "Tf":
+
+                       id_aida_obs = dico_params[param]["index_obs"] 
+                       (values_obs, time_obs, header_obs)=read_aida.donnees(doy1,doy2,str(today.year),id_aida_obs,"Tf")
+
+                       id_aida_mod = dico_params[param]["index_model"] + "_" + reseau 
+                       (values_mod, time_mod, header_mod)=read_aida.donnees(doy1,doy2,str(today.year),id_aida_mod,model)
+
+ 
+                       biais[param][model][reseau]['time'] = dataframe_sanstrou.index
+                      
+
+                       if values_mod is None or values_obs is None :
+
+                          biais[param][model][reseau]['values'] = 0.
+                          
+
+
+                       else:   
+             
+                          
+                          #Création de dataframes des valeurs obs et modèles
+                          df_obs = pd.DataFrame(list(values_obs), index=time_obs)
+                          df_mod = pd.DataFrame(list(values_mod), index=time_mod)
+
+                          #concordance des dates sur le dataframe défini au début 
+                          df_obs= dataframe_sanstrou.join(df_obs)
+                          df_mod= dataframe_sanstrou.join(df_mod)
+
+                          #Calcul du biais
+                          df_biais = df_mod - df_obs
+                          df_biais = df_biais.fillna(0)
+                          df_biais.index = pd.to_datetime(df_biais.index)
+
+                          #Passage du dataframes "biais" en listes pour intégrations dans les dictionnaires biais
+                          biais[param][model][reseau]['values']  = list(df_biais[0])
+                          biais[param][model][reseau]['time']    = list(df_biais.index)
+
+
+
+        chartB[param] = go.Figure()
+        # Tracé des figures
+               
+        graphB[param] = dcc.Graph(
+                id='graphB_' + param,
+                figure=chartB[param],
+            ) 
+         #Tranformation en HTML
+         
+         # Ces 2 dernières étapes sont essentielles : d'abord on effectue le tracé, puis on le transforme en objet html pour pouvoir l'afficher
+
+    return biais, chartB, graphB
+
+
+biais, chartB, graphB = calcul_biais(start_day,end_day)
+
+
+
+############### Widgets ###############
+
+calendrier = html.Div([
+    dcc.DatePickerRange(
+        id='my-date-picker-range',
+        first_day_of_week=1,
+        min_date_allowed=date(2015, 1, 1),
+        max_date_allowed=date(tomorow.year, tomorow.month, tomorow.day), # Il faut mettre demain pour que la date max soit aujourd'hui
+        display_format = "DD/MM/YYYY",
+        initial_visible_month=date(today.year, today.month, today.day),
+        start_date=yesterday,
+        end_date=today,
+        minimum_nights=0 # Durée minimum sélectionnable : si =0, durée min = 1 jour c-à-d start_date=end_date
+    ),html.Div(id='output-container-date-picker-range')])
+
+
+#multi_select_line_chartB_obs = dcc.Dropdown(
+#        id="multi_select_line_chartB_obs",
+#        options=[{"value":label, "label":label} for label in ["Obs"]],
+#        value=["Obs"], # Valeur qui s'affiche par défaut (si pas dans la liste des options alors rien n'est affiché)
+#        multi=True, # Possibilité d'en choisir plusieur
+#        clearable = False
+#    )
+# Le dcc.Dropdown est un objet dash qui permet l'affichage des options sélectionnables quand on clique dessus, puis la sélection d'une ou plusieurs options.
+
+
+multi_select_line_chartB_ARP = dcc.Dropdown(
+        id="multi_select_line_chartB_ARP",
+        options=[{"value":label, "label":label} for label in ["Arp_J-1_00h","Arp_J-1_12h","Arp_J0_00h","Arp_J0_12h",]],
+        value=["Arp_J0_00h","Arp_J-1_12h"],
+        multi=True,
+        clearable = False
+    )
+
+multi_select_line_chartB_ARO = dcc.Dropdown(
+        id="multi_select_line_chartB_ARO",
+        options=[{"value":label, "label":label} for label in ["Aro_J-1_00h","Aro_J-1_12h","Aro_J0_00h","Aro_J0_12h"]],
+        value=["Aro_J0_00h","Aro_J-1_12h"],
+        multi=True,
+        clearable = False
+    )
+
+multi_select_line_chartB_MNH = dcc.Dropdown(
+        id="multi_select_line_chartB_MNH",
+        options=[{"value":label, "label":label} for label in ["MésoNH_Arp","MésoNH_Aro","MésoNH_Obs"]],
+        value=["MésoNH_Arp"],
+        multi=True,
+        clearable = False
+    )
+
+multi_select_line_chartB_SURFEX = dcc.Dropdown(
+        id="multi_select_line_chartB_SURFEX",
+        options=[{"value":label, "label":label} for label in ["SURFEX_Arp","SURFEX_Aro","SURFEX_Obs"]],
+        value=["SURFEX_Arp"],
+        multi=True,
+        clearable = False
+    )
+     
+id_user = html.Div([
+        dcc.Input(id = 'id_user1',type = 'text',placeholder = 'id de la simulation à rajouter'),
+        dcc.Input(id = 'id_user2',type = 'text',placeholder = 'id de la simulation à rajouter'),
+        dcc.Input(id = 'id_user3',type = 'text',placeholder = 'id de la simulation à rajouter'),
+        dcc.Input(id = 'id_user4',type = 'text',placeholder = 'id de la simulation à rajouter'),
+        dcc.Input(id = 'id_user5',type = 'text',placeholder = 'id de la simulation à rajouter')]) # Attention : dcc.Input != Input (voir plus bas)
+# Les dcc.Input sont des carrés où l'utilisateur peut rentrer des info : ici type = 'text' donc du texte, 
+
+
+
+
+############### Callbacks ###############
+
+# Les callbacks ont obligatoirement besoin d'une liste d'Output et d'une liste d'Input pour fonctionner.
+# Ils contiennent la/les fonction(s) qui vont actualiser l'/les Output(s) à chaque fois qu'un/que des Input(s) est/sont modifié(s)
+
+
+output_graphsB = []
+for param in params:
+    output_graphsB.append(Output('graphB_' + param,'figure')) # Définition des Outputs c-à-d des graphs qui seront mis à jour
+
+
+@app.callback(output_graphsB, 
+#               [Input('multi_select_line_chartB_obs', 'value'),
+                [Input('multi_select_line_chartB_ARP', 'value'),
+                Input('multi_select_line_chartB_ARO', 'value'),
+                Input('multi_select_line_chartB_MNH', 'value'),
+                Input('multi_select_line_chartB_SURFEX', 'value'),
+                Input('my-date-picker-range', 'start_date'),
+                Input('my-date-picker-range', 'end_date'),
+                Input('id_user1','value'),Input('id_user2','value'),Input('id_user3','value'),Input('id_user4','value'),Input('id_user5','value')
+                ])
+		# Chaque Input prend en argument l'id d'une dcc.Input et la valeur qu'elle récupère
+
+
+
+def update_lineB(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_user2,id_user3,id_user4,id_user5):
+# On donne ici le nom que l'on veut aux arguments, seul l'ordre (et le nombre) est important et correspond à l'ordre (et au nombre) d'Inputs du callback. 
+        
+    if start_day is not None:
+        start_day = date.fromisoformat(start_day)
+    if end_day is not None:
+        end_day = date.fromisoformat(end_day)   
+    # transformation des dates de type str que l'on récupère du "calendrier" en datetime.date
+    
+    # UPDATE DES DATES APRES LE CALLBACK
+
+
+    data_mnh=lecture_mesoNH.mesoNH(start_day,end_day,models,params)
+    data_surfex=lecture_surfex.surfex(start_day,end_day,models,params)
+
+    # CALCUL DES BIAIS correspondants à la période choisie
+
+    biais, chartB, graphB = calcul_biais(start_day,end_day)
+
+#    biais_mnh = data_mnh-data['Tf']['values']
+
+    # Puis, mise à jour des graphes :
+
+    for param in params:
+        chartB[param] = go.Figure()
+	# Création des objets plotly
+
+
+
+
+## Pour les 5 rejeux possibles de MésoNH, correspondants aux différents id_user :
+        
+    types=['solid', 'dot','dash','longdash','dashdot']   # différentes valeurs pour l'attribut "dash" du paramètre "line" qui donnent le type de tracé (trait plein/pointillés/tirets/longs tirets/alternance tirets-points)
+    for j,id_user in enumerate([id_user1,id_user2,id_user3,id_user4,id_user5]):
+        data_user=lecture_mesoNH.mesoNH_user(start_day,end_day,id_user,params)
+        nb_jour = (end_day-start_day).days
+        for i in range(nb_jour+1):
+            date_run=start_day+datetime.timedelta(days=i)
+            today_str=date_run.strftime('%Y%m%d')
+            for param in params:
+                try :
+                    if isinstance(data_user[today_str][param],(list,np.ndarray)):  # On vérifie qu'il y a des données
+
+                        biais_user=data_user[today_str][param]-data[param]['Tf']['values']
+
+#                        A VOIR UNE FOIS QUE L'ON AURA DES SORTIES MESO-NH : DIMENSIONS COMPATIBLES??? 
+
+#                        chartB[param].add_trace(go.Scatter(x=data_user[today_str]['time'], y=data_user[today_str][param], line=dict(color='black',dash=types[j]),name='MésoNH modifié (id : '+str(id_user)+' )'))
+                        chartB[param].add_trace(go.Scatter(x=biais_user[today_str]['time'], y=biais_user[today_str][param], line=dict(color='black',dash=types[j]),name='MésoNH modifié (id : '+str(id_user)+' )'))
+                        print(biais_user)
+                except KeyError :
+                    pass
+		# Ici le try/except permet de ne rien afficher lorsque les données ne sont pas disponibles
+
+
+## BIAIS -> le calcul sur les obs permet d'avoir le zéro en affichage (obs - obs = 0)
+
+#    for selection in reseau1:
+#        if selection == "Obs" :
+#            for param in params:
+#                if isinstance(biais[param]['Tf']['values'],(list,np.ndarray)):
+#                    chartB[param].add_trace(go.Scatter(x=biais[param]['Tf']['time'], y=biais[param]['Tf']['values'],marker={"color":"red"},mode="lines",name=selection))
+
+		    # Ici plus besoin de try/except, c'est AIDA qui s'en charge
+
+## Pour les différents réseaux d'Arpège :
+    for selection in reseau2:
+        if selection == "Arp_J-1_00h" :
+            reseau = reseaux[0]
+            line_param = dict(color='navy',dash='dot')
+        if selection == "Arp_J-1_12h" :
+            reseau = reseaux[1]
+            line_param = dict(color='mediumslateblue',dash='dot')
+        if selection == "Arp_J0_00h" :
+            reseau = reseaux[2]
+            line_param = dict(color='navy')
+        if selection == "Arp_J0_12h" :
+            reseau = reseaux[3]
+            line_param = dict(color='mediumslateblue')
+            
+        for param in params:
+            if isinstance(biais[param]['Gt'][reseau]['values'],(list,np.ndarray)):
+#                chartB[param].add_trace(go.Scatter(x=biais[param]['Gt'][reseau]['time'], y=biais[param]['Gt'][reseau]['values'].biais,line=line_param,name=selection))
+                chartB[param].add_trace(go.Scatter(x=biais[param]['Gt'][reseau]['time'], y=biais[param]['Gt'][reseau]['values'],line=line_param,name=selection))
+
+## Pour les différents réseaux d'Arome :    
+    for selection in reseau3:
+        if selection == "Aro_J-1_00h" :
+            reseau = reseaux[0]
+            line_param = dict(color='green',dash='dot')
+        if selection == "Aro_J-1_12h" :
+            reseau = reseaux[1]
+            line_param = dict(color='olive',dash='dot')
+        if selection == "Aro_J0_00h" :
+            reseau = reseaux[2]
+            line_param = dict(color='green')
+        if selection == "Aro_J0_12h" :
+            reseau = reseaux[3]
+            line_param = dict(color='olive')
+            
+        for param in params:
+            if isinstance(biais[param]['Rt'][reseau]['values'],(list,np.ndarray)):
+#                chartB[param].add_trace(go.Scatter(x=biais[param]['Rt'][reseau]['time'], y=biais[param]['Rt'][reseau]['values'].biais,line=line_param,name=selection))
+                chartB[param].add_trace(go.Scatter(x=biais[param]['Rt'][reseau]['time'], y=biais[param]['Rt'][reseau]['values'],line=line_param,name=selection))    
+
+
+
+
+#!!!!!! A COMPLETER POUR MESO-NH ET SURFEX !!!!!!!!!!!!
+
+## Pour les courbes de MésoNH : 
+# A la différence des 3 réseaux précédents où l'on récupère les données sur la période choisie à chaque nouvelle période grâce à AIDA, MésoNH et SURFEX sont stockés par dossier nommé à la date de run.
+# Il faut donc parcourir tous les jours entre le start_day et le end_day et stocker les informations lues.
+
+    courbe_affichee=[]    
+    for selection in reseau4 :
+        nb_jour = (end_day-start_day).days
+        for i in range(nb_jour+1):
+            day=start_day+timedelta(days=i)
+            today_str=day.strftime('%Y%m%d')
+
+            #Gestion du nombre de légende affichée : La légende est affichée si elle absente avant cad si courbe_affichee est vide (courbe affichee est remplie au 1er jour affiche)
+            if selection not in courbe_affichee and dico_model[selection]['name'] in data_mnh[today_str] and isinstance(data_mnh[today_str][dico_model[selection]['name']]['tmp_2m'],(list,np.ndarray)):
+                courbe_affichee.append(selection)
+                afficher_legende=True
+            else:
+                afficher_legende=False
+		# Ce montage un peu douteux de if/else permet de n'afficher qu'une seule fois la légende de la courbe MésoNH choisie. Sans ça, le programme affichait autant de fois la légende
+		# qu'il y avait de jours entre le start_day et le end_day.
+            for param in params:
+                try :
+                    if isinstance(data_mnh[today_str][dico_model[selection]['name']][param],(list,np.ndarray)):
+                        chartB[param].add_trace(go.Scatter(x=data_mnh[today_str]['time'], y=data_mnh[today_str][dico_model[selection]['name']][param], marker={"color":dico_model[selection]['color']}, mode="lines",name=selection,showlegend=afficher_legende))
+                except KeyError :
+                    pass
+		# Le retour du try/except pour éviter que le script ne se bloque.
+
+
+
+## Pour les courbes de Surfex : 
+    courbe_affichee_surfex=[]    
+    for selection in reseau5 :
+        nb_jour = (end_day-start_day).days
+        for i in range(nb_jour+1):
+            day=start_day+timedelta(days=i)
+            today_str=day.strftime('%Y%m%d')
+                
+            if selection not in courbe_affichee_surfex and dico_model[selection]['name'] in data_surfex[today_str] and isinstance(data_surfex[today_str][dico_model[selection]['name']]['tmp_2m'],(list,np.ndarray)):
+                courbe_affichee_surfex.append(selection)
+                afficher_legende_surfex=True
+            else:
+                afficher_legende_surfex=False
+            for param in params:
+                try :
+                    if isinstance(data_surfex[today_str][dico_model[selection]['name']][param],(list,np.ndarray)):
+                        chartB[param].add_trace(go.Scatter(x=data_surfex[today_str]['time'], y=data_surfex[today_str][dico_model[selection]['name']][param],line=dict(color=dico_model[selection]['color'],dash='dashdot'),name=selection,showlegend=afficher_legende_surfex))
+                except KeyError :
+                    pass
+        
+
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        
+
+
+
+## Mise à jour des graphiques après tous les changements        
+    list_chartsB = []
+    for param in params:
+        chartB[param].update_layout(height=500,
+                         xaxis_title="Date et heure",
+                         yaxis_title=str(dico_params[param]['unit']),
+                         title=dico_params[param]['title'])
+        list_chartsB.append(chartB[param])
+    
+
+
+
+
+    
+    return list_chartsB #Le callback attend des Outputs qui sont contenus dans chartB[param]
+ 
+
+
+
+
+
+############### Layout ###############
+
+
+#!!!!!!!!!!!!!!! Tracé des graphes sur la page correspondantes: à modifier avec les graphes affichant les biais (calculés plus haut)
+
+
+all_graphsB = []
+for param in params:
+    all_graphsB.append(html.Div(graphB[param],className="five columns"))
+
+row2 = html.Div(children=all_graphsB, className="twelve columns")
+
+# Puisqu'on n'a pas la main sur la css (pour l'instant)(cf external_stylesheets au début du code), on joue sur les html.Div.
+# Ici par exemple, chaque graph est d'abord mis dans une Div dont on réduit la taille ("className="five columns"),
+# puis on met toutes ces Div dans une seule qui elle prend toute la page ("className="twelve columns")
+
+
+menu = html.Div([
+        dcc.Link('Notice__', href='/MeteopoleX/notice'),
+        dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
+        dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
+        dcc.Link('__Rejeu MésoNH__', href='/MeteopoleX/mesoNH'),
+        dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
+        ],className="twelve columns",style={"text-align": "right", "justifyContent":"center"})
+
+# le menu diffère de chaque page, il contient une liste de lien (dcc.Link) dont les arguments sont le nom souhaité et son url
+
+
+biais_layout = html.Div([
+    html.H1('Biais entre Observations Météopôle-Flux et Modèles'),
+    menu,
+    calendrier,
+    html.Div([multi_select_line_chartB_ARP,multi_select_line_chartB_ARO,
+    multi_select_line_chartB_MNH,multi_select_line_chartB_SURFEX],className="eight columns",style={"text-align": "center", "justifyContent":"center"}),
+    id_user,
+    row2,
+],className="twelve columns",style={"text-align": "center", "justifyContent":"center"})
+
+
+
+
+
+
+
+
 ########################
 #
 #   Sondages
 #
 ########################
 
-
 ############### Données ###############
-
 import radio_sondage
 
 params_rs = ["Température","Humidité relative","Vent"]
@@ -913,6 +1359,7 @@ row2 = html.Div(children=all_graphs, className="twelve columns")
 menu = html.Div([
         dcc.Link('Notice__', href='/MeteopoleX/notice'),
         dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
+        dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
         dcc.Link('__Rejeu MésoNH__', href='/MeteopoleX/mesoNH'),
         dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
         ],className="twelve columns",style={"text-align": "right", "justifyContent":"center"})
@@ -1039,6 +1486,7 @@ row1=html.Div(children=all_params_html, className="twelve columns")
 menu = html.Div([
         dcc.Link('Notice__', href='/MeteopoleX/notice'),
         dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
+        dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
         dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
         dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
         ],className="twelve columns",style={"text-align": "right", "justifyContent":"center"})
@@ -1076,6 +1524,7 @@ mesoNH_layout = html.Div([
 menu = html.Div([
         dcc.Link('Notice__', href='/MeteopoleX/notice'),
         dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
+        dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
         dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
         dcc.Link('__Rejeu MésoNH', href='/MeteopoleX/mesoNH'),
         ],className="twelve columns",style={"text-align": "right", "justifyContent":"center"})
@@ -1101,6 +1550,8 @@ surfex_layout = html.Div([
 def display_page(pathname):
     if pathname == '/MeteopoleX/':
         return obs_modeles_layout
+    elif pathname == '/MeteopoleX/biais':
+        return biais_layout
     elif pathname == '/MeteopoleX/mesoNH':
         return mesoNH_layout
     elif pathname == '/MeteopoleX/surfex':
@@ -1114,3 +1565,5 @@ def display_page(pathname):
 
 if __name__ == '__main__':
     app.run_server(debug=True,host="0.0.0.0",port=8010)
+
+#print(data)
