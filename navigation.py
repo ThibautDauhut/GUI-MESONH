@@ -216,6 +216,8 @@ dico_model={"MésoNH_Arp":
                  'color':'gold'}}
 
 params = ["tmp_2m", "tmp_10m","hum_rel","vent_ff10m","flx_mvt","flx_chaleur_sens","flx_chaleur_lat","SWD","LWU","t_surface","t-1","hu_couche1","cumul_RR","altitude_CL"]
+
+
 # C'est la liste de tous les paramètres qui vont être tracés. Pour toute modification de cette liste, penser à modifier le dico_params en conséquence.
         
 models = ["Gt", "Rt","Tf"]
@@ -245,6 +247,9 @@ def selection_donnees (start_day,end_day):
     data = {}
     chart = {}
     graph = {}
+
+
+
     for param in params:
         if param not in data:
             data[param] = {}
@@ -254,25 +259,35 @@ def selection_donnees (start_day,end_day):
                 for reseau in reseaux:
                     if reseau not in data[param][model]:
                         data[param][model][reseau] = {}
+
                     if model == "Tf":
                         id_aida = dico_params[param]["index_obs"] 
                         (values, time, header)=read_aida.donnees(doy1,doy2,str(today.year),id_aida,model) #Read AIDA : lit tous les paramètres alors que selection de données va lire uniquement un parametre specifique
                         data[param][model]['values'] = values
-                        data[param][model]['time'] = time
+                        data[param][model]['time'] = time 
+
                         break
                     else:
                         id_aida = dico_params[param]["index_model"] + "_" + reseau 
                         (values, time, header)=read_aida.donnees(doy1,doy2,str(today.year),id_aida,model)
                         data[param][model][reseau]['values'] = values
                         data[param][model][reseau]['time'] = time
-                        
+
+#Affichage modèle: décalé de +30 minutes par rapport à l'observation (visible sur le décalage en SWdn lors des journées sans nuages)
+                        #print('TIME MOD = ', time)
+
+                        #if time is not None:
+                        #   data[param][model][reseau]['time'] = time-datetime.timedelta(minutes=30)
+
+
+                       
                         
         chart[param] = go.Figure()
         # Tracé des figures
                
         graph[param] = dcc.Graph(
                 id='graph_' + param,
-                figure=chart[param],
+                figure=chart[param]
             ) 
          #Tranformation en HTML
          
@@ -368,7 +383,10 @@ id_user = html.Div([
 # Ils contiennent la/les fonction(s) qui vont actualiser l'/les Output(s) à chaque fois qu'un/que des Input(s) est/sont modifié(s)
 
 
+
+
 output_graphs = []
+
 for param in params:
     output_graphs.append(Output('graph_' + param,'figure')) # Définition des Outputs c-à-d des graphs qui seront mis à jour
 
@@ -384,6 +402,7 @@ for param in params:
                 Input('id_user1','value'),Input('id_user2','value'),Input('id_user3','value'),Input('id_user4','value'),Input('id_user5','value')
                 ])
 		# Chaque Input prend en argument l'id d'une dcc.Input et la valeur qu'elle récupère
+
 
 def update_line(reseau1,reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_user2,id_user3,id_user4,id_user5):
 # On donne ici le nom que l'on veut aux arguments, seul l'ordre (et le nombre) est important et correspond à l'ordre (et au nombre) d'Inputs du callback. 
@@ -421,7 +440,7 @@ def update_line(reseau1,reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_use
                 try :
                     if isinstance(data_user[today_str][param],(list,np.ndarray)):  # On vérifie qu'il y a des données
                         chart[param].add_trace(go.Scatter(x=data_user[today_str]['time'], y=data_user[today_str][param], line=dict(color='black',dash=types[j]),name='MésoNH modifié (id : '+str(id_user)+' )'))
-                        print(data_user)
+                        #print(data_user)
                 except KeyError :
                     pass
 		# Ici le try/except permet de ne rien afficher lorsque les données ne sont pas disponibles
@@ -528,7 +547,7 @@ def update_line(reseau1,reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_use
 ## Mise à jour des graphiques après tous les changements        
     list_charts = []
     for param in params:
-        chart[param].update_layout(height=500,
+        chart[param].update_layout(height=500, width=1300,
                          xaxis_title="Date et heure",
                          yaxis_title=str(dico_params[param]['unit']),
                          title=dico_params[param]['title'])
@@ -541,11 +560,19 @@ def update_line(reseau1,reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_use
                                              
 ############### Layout ###############
 
-all_graphs = []
-for param in params:
-    all_graphs.append(html.Div(graph[param],className="five columns"))
 
-row2 = html.Div(children=all_graphs, className="twelve columns")
+
+all_graphs=[]
+
+for param in params:
+   
+    all_graphs.append(html.Div(graph[param],className="six columns", style={'display': 'inline-block'}))
+
+row = html.Div(children=all_graphs, className="six columns")
+
+
+
+#print("SHAPE OF ROW2 = ", row2)
 
 # Puisqu'on n'a pas la main sur la css (pour l'instant)(cf external_stylesheets au début du code), on joue sur les html.Div.
 # Ici par exemple, chaque graph est d'abord mis dans une Div dont on réduit la taille ("className="five columns"),
@@ -567,11 +594,14 @@ obs_modeles_layout = html.Div([
     html.H1('MeteopoleX'),
     menu,
     calendrier,
+    dcc.Dropdown(),
     html.Div([multi_select_line_chart_obs,multi_select_line_chart_ARP,multi_select_line_chart_ARO,
-    multi_select_line_chart_MNH,multi_select_line_chart_SURFEX],className="four columns",style={"text-align": "center", "justifyContent":"center"}),
+    multi_select_line_chart_MNH,multi_select_line_chart_SURFEX],className="six columns",style={"text-align": "center", "justifyContent":"center"}),
     id_user,
-    row2,
-],className="twelve columns",style={"text-align": "center", "justifyContent":"center"})
+#    row_left,
+#    row_right,
+    row,
+],className="row",style={"text-align": "center", "justifyContent":"center"})
 
 # Ces dernières lignes sont la mise en forme finale de la page
     
@@ -751,7 +781,9 @@ def calcul_biais(start_day,end_day):
     biais = {}
 
     #création d'un dataframe vide avec les valeurs des dates de la période (start_day,end_day), toutes les heures.
+
     dt=mdates.num2date(mdates.drange(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)),datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)),datetime.timedelta(hours=1)))
+#    dt=mdates.num2date(mdates.drange(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)),datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)),datetime.timedelta(minutes=30)))
 
     dataallyear = [i.replace(tzinfo=None) for i in dt]
     dataframe_sanstrou = pd.DataFrame(index=dataallyear)   
@@ -784,9 +816,8 @@ def calcul_biais(start_day,end_day):
                        id_aida_mod = dico_params[param]["index_model"] + "_" + reseau 
                        (values_mod, time_mod, header_mod)=read_aida.donnees(doy1,doy2,str(today.year),id_aida_mod,model)
 
- 
-                       biais[param][model][reseau]['time'] = dataframe_sanstrou.index
-                      
+                       #if time_mod is not None:
+                       #   biais[param][model][reseau]['time'] = time_mod-datetime.timedelta(minutes=30)
 
                        if values_mod is None or values_obs is None :
 
@@ -798,15 +829,18 @@ def calcul_biais(start_day,end_day):
              
                           
                           #Création de dataframes des valeurs obs et modèles
-                          df_obs = pd.DataFrame(list(values_obs), index=time_obs)
-                          df_mod = pd.DataFrame(list(values_mod), index=time_mod)
+                          df_obs = pd.DataFrame(list(values_obs), index=(time_obs))
+                          df_mod = pd.DataFrame(list(values_mod), index=(time_mod))
 
                           #concordance des dates sur le dataframe défini au début 
                           df_obs= dataframe_sanstrou.join(df_obs)
                           df_mod= dataframe_sanstrou.join(df_mod)
+                           
+                          #df_mod.index= df_mod.index-datetime.timedelta(minutes=30)
 
                           #Calcul du biais
                           df_biais = df_mod - df_obs
+                          #df_biais = dataframe_sanstrou.join(df_biais)
                           df_biais = df_biais.fillna(0)
                           df_biais.index = pd.to_datetime(df_biais.index)
 
@@ -977,7 +1011,7 @@ def update_lineB(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
 
 #                        chartB[param].add_trace(go.Scatter(x=data_user[today_str]['time'], y=data_user[today_str][param], line=dict(color='black',dash=types[j]),name='MésoNH modifié (id : '+str(id_user)+' )'))
                         chartB[param].add_trace(go.Scatter(x=biais_user[today_str]['time'], y=biais_user[today_str][param], line=dict(color='black',dash=types[j]),name='MésoNH modifié (id : '+str(id_user)+' )'))
-                        print(biais_user)
+                        #print(biais_user)
                 except KeyError :
                     pass
 		# Ici le try/except permet de ne rien afficher lorsque les données ne sont pas disponibles
@@ -1097,7 +1131,7 @@ def update_lineB(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
 ## Mise à jour des graphiques après tous les changements        
     list_chartsB = []
     for param in params:
-        chartB[param].update_layout(height=500,
+        chartB[param].update_layout(height=500, width=1300,
                          xaxis_title="Date et heure",
                          yaxis_title=str(dico_params[param]['unit']),
                          title=dico_params[param]['title'])
@@ -1123,7 +1157,7 @@ def update_lineB(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
 
 all_graphsB = []
 for param in params:
-    all_graphsB.append(html.Div(graphB[param],className="five columns"))
+    all_graphsB.append(html.Div(graphB[param],className="six columns", style={'display': 'inline-block'}))
 
 row2 = html.Div(children=all_graphsB, className="twelve columns")
 
@@ -1327,7 +1361,7 @@ def update_rs(wich_heure,date_value,model_choisi):
                     pass
     list_charts = []
     for param in params_rs:
-        chart[param].update_layout(height=500,
+        chart[param].update_layout(height=1300, width=800,
                          xaxis_title=options_params_rs[param]["label"]+" ("+options_params_rs[param]["unit"]+")",
                          yaxis_title="Altitude (m agl)",
                          title=param)
@@ -1346,14 +1380,14 @@ for heure in heures :
     legende.append(html.Div(dcc.Textarea(value=heures[heure]['value'], style={'color':heures[heure]['color'],'width': 50, 'height': 25}),className="one columns",style={"text-align": "left", "justifyContent":"center"}))
 # Ces 4 lignes permettent de créer à la chaine les zones de texte pour montrer à l'utilisateur le code couleur choisi
 
-row1= html.Div(children=legende,className="five columns")
+row1= html.Div(children=legende,className="six columns")
 
 
 all_graphs = []
 for param in params_rs:
-    all_graphs.append(html.Div(graph[param],className="four columns"))
+    all_graphs.append(html.Div(graph[param],className="six columns", style={'display': 'inline-block'}))
 
-row2 = html.Div(children=all_graphs, className="twelve columns")
+row2 = html.Div(children=all_graphs, className="six columns")
 
 
 menu = html.Div([
@@ -1373,7 +1407,7 @@ rs_layout = html.Div([
     html.Br(),
     html.Br(),
     wich_heure,multi_select_line_chart_model,
-    html.Div(dcc.Textarea(value="Code couleur :", style={'color':"black"}),className="one columns",style={"text-align": "left", "justifyContent":"center"}),
+    html.Div(dcc.Textarea(value="Code couleur :", style={'color':"black"}),className="two columns",style={"text-align": "left", "justifyContent":"center"}),
     row1,row2,
     html.Br(),
 ],className="twelve columns",style={"text-align": "center", "justifyContent":"center"})
@@ -1472,7 +1506,7 @@ def loader_func(n_clicks,start_date,end_date,*arg):
         for i in range(nb_jour+1):
             date_run=start_date+timedelta(days=i)
             today_str=date_run.strftime('%Y-%m-%dT00:00:00')
-            print(start_date)
+            #print(start_date)
             mesonh.MesoNH(date_run=today_str, model_couplage="AROME", type_forcage="MODEL", user_params=user_params)
                 
         return html.H2('Simulation terminée !')
