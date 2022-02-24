@@ -11,6 +11,8 @@ import time
 import datetime
 from datetime import timedelta,date
 
+from dateutil.relativedelta import relativedelta
+
 #from datetime import datetime
 
 import matplotlib.dates as mdates
@@ -94,6 +96,12 @@ start_day=today-timedelta(days=1)
 doy1 = datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%j')
 doy2 = datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)).strftime('%j')
 
+#print(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%j'))
+#print(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%h'))
+#print(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%m'))
+#print(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%M'))
+
+#print(datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)).strftime('%M'))
 
 ##############################
 #
@@ -267,21 +275,34 @@ def selection_donnees (start_day,end_day):
                         data[param][model]['time'] = time 
 
                         break
+
                     else:
+
                         id_aida = dico_params[param]["index_model"] + "_" + reseau 
                         (values, time, header)=read_aida.donnees(doy1,doy2,str(today.year),id_aida,model)
                         data[param][model][reseau]['values'] = values
+
                         data[param][model][reseau]['time'] = time
 
-#Affichage modèle: décalé de +30 minutes par rapport à l'observation (visible sur le décalage en SWdn lors des journées sans nuages)
-                        #print('TIME MOD = ', time)
-
-                        #if time is not None:
-                        #   data[param][model][reseau]['time'] = time-datetime.timedelta(minutes=30)
-
-
+#Correction des données ARPEGE parfois datées à H-1:59 au lieu de H:00
+                        if time is not None:                       
                        
-                        
+                           i=0
+                     
+                           for ts in time:
+
+                               if ts.minute == 59. :
+ 
+                                  time[i]  = time[i] + datetime.timedelta(minutes=1)
+
+                                  i=i+1
+
+                               else:
+
+                                  i=i+1                
+
+
+                      
         chart[param] = go.Figure()
         # Tracé des figures
                
@@ -547,7 +568,7 @@ def update_line(reseau1,reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_use
 ## Mise à jour des graphiques après tous les changements        
     list_charts = []
     for param in params:
-        chart[param].update_layout(height=500, width=1300,
+        chart[param].update_layout(height=500, width=1000,
                          xaxis_title="Date et heure",
                          yaxis_title=str(dico_params[param]['unit']),
                          title=dico_params[param]['title'])
@@ -816,8 +837,26 @@ def calcul_biais(start_day,end_day):
                        id_aida_mod = dico_params[param]["index_model"] + "_" + reseau 
                        (values_mod, time_mod, header_mod)=read_aida.donnees(doy1,doy2,str(today.year),id_aida_mod,model)
 
-                       #if time_mod is not None:
-                       #   biais[param][model][reseau]['time'] = time_mod-datetime.timedelta(minutes=30)
+
+
+#Correction des données ARPEGE parfois datées à H-1:59 au lieu de H:00
+                       if time_mod is not None:                       
+                       
+                          i=0
+                     
+                          for ts in time_mod:
+
+                              if ts.minute == 59. :
+ 
+                                 time_mod[i]  = time_mod[i] + datetime.timedelta(minutes=1)
+
+                                 i=i+1
+
+                              else:
+
+                                 i=i+1   
+
+
 
                        if values_mod is None or values_obs is None :
 
@@ -847,6 +886,11 @@ def calcul_biais(start_day,end_day):
                           #Passage du dataframes "biais" en listes pour intégrations dans les dictionnaires biais
                           biais[param][model][reseau]['values']  = list(df_biais[0])
                           biais[param][model][reseau]['time']    = list(df_biais.index)
+
+
+                 
+
+                          
 
 
 
@@ -1131,7 +1175,7 @@ def update_lineB(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
 ## Mise à jour des graphiques après tous les changements        
     list_chartsB = []
     for param in params:
-        chartB[param].update_layout(height=500, width=1300,
+        chartB[param].update_layout(height=500, width=1000,
                          xaxis_title="Date et heure",
                          yaxis_title=str(dico_params[param]['unit']),
                          title=dico_params[param]['title'])
@@ -1361,7 +1405,7 @@ def update_rs(wich_heure,date_value,model_choisi):
                     pass
     list_charts = []
     for param in params_rs:
-        chart[param].update_layout(height=1300, width=800,
+        chart[param].update_layout(height=1300, width=600,
                          xaxis_title=options_params_rs[param]["label"]+" ("+options_params_rs[param]["unit"]+")",
                          yaxis_title="Altitude (m agl)",
                          title=param)
