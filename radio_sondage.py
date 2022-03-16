@@ -44,8 +44,6 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
 
             if 'level' not in data_rs[model]:
                 data_rs[model]['level']= f.variables['level'][:]
-
-                print("LEVELS MNH :",  data_rs[model]['level'])
                 
                 
                 for heure in heures :
@@ -87,20 +85,11 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
             if model not in data_rs :
                data_rs[model]={}
 
-            print("MODELE : ", model)
-
-
-
             if 'level' not in data_rs[model]:
-
-
 
                 if model == 'ARP' :
 
-                   data_rs[model]['level']= f['height_f'][1,::-1]
-
-
-
+                   data_rs[model]['level']= f['height_h'][1,::-1]
 
                 if model == 'ARO' :
                
@@ -116,144 +105,32 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
 10290.7432801852, 10677.0795176319, 11082.0546910758, 11510.3223903101, 11966.1795634141, 12454.7528314299, 12982.0128918015, 13554.6557230282, 14180.1025765563, 
 14866.4999945363, 15627.4731252487, 16485.0471290191, 17467.8152385289, 18610.9387773901, 19955.6070022098, 21550.0160473017, 23450.1477297912, 34461.1214067193]
                    """
-
   
-                   data_rs[model]['level']= f['height_f'][1,::-1]
-              
-                
+                   data_rs[model]['level']= f['height_h'][1,::-1]
+
                 for heure in heures_aroarp :
+
                     if heure not in data_rs[model]:
                       data_rs[model][heure]={}
-
-                      print("HEURES : ", heure)
-                        
+     
                       for param in params_rs :
 
-                          print("PARAM : ", param)
                           if param not in data_rs[model][heure]:
                              data_rs[model][heure][param]={}
 
                              if param == "Température" : 
 
-                                #print(f['t'][::-1,heures_aroarp[heure]['num_val']])
-                                #print(heures_aroarp[heure]['num_val'])
-
                                 data_rs[model][heure][param]= (f['t'][heures_aroarp[heure]['num_val'],::-1] - 273.15)
-                                #P = f['pressure_h'][:,heures[heure]['num_val']]
-                                #D = (100000/P)**(2/7)  
-                                #data_rs[model][heure][param]= np.flip(((f['theta'][:,heures[heure]['num_val']] / D) - 273.15),0)
 
-                                #print(len(data_rs[model][heure][param]))
-                                    
                              if param == "Humidité relative":
                                 data_rs[model][heure][param]= (f['hr'][heures_aroarp[heure]['num_val'],::-1]*100)
                                     
                              if param == "Vent":
-                                #U=f.variables['u'][:,heures[heure]['num_val']]
-                                #V=f.variables['u'][:,heures[heure]['num_val']]
                                 data_rs[model][heure][param]=f['Vamp'][heures_aroarp[heure]['num_val'],::-1]
-
-                                #print(aroarp_rs)
          
         except FileNotFoundError:
             pass
-        #print('MODEL : ', model)
-        #print('LEVELS : ', data_rs['level'])
-
-
-
-
-    
+  
     return data_rs
 
 
-"""
-def pv_aroarp(day,models,params_rs,heures):
-    aroarp_rs={}
-    today_str=day
-    today_str=str(day.year)
-    if len(str(day.month))==1:
-        today_str=today_str+'0'+str(day.month)
-    else :
-        today_str=today_str+str(day.month)
-
-    yyyymm = today_str
-
-    if len(str(day.day))==1:
-        today_str=today_str+'0'+str(day.day)
-    else :
-        today_str=today_str+str(day.day)
-    
-    for model in ['ARO', 'ARP']:
-        try :
-            if model == 'ARP' :
-
-               f = nc.Dataset('/cnrm/proc/bazile/NetCdf/Toulouse/'+yyyymm+'/Arpege-oper-L105_Toulouse_'+today_str+'00.nc')
-
-            else :
-
-               f = nc.Dataset('/cnrm/ktrm/manip/METEOPOLEX/AROME/Toulouse/'+yyyymm+'/netcdf_tlse.tar.arome_'+today_str+'.netcdf')
-
-             
-               if 'level' not in aroarp_rs:
-                  aroarp_rs['level']= f.variables['height_h'][:,5]
-
-                  print(len(f.variables['height_h']))
-                
-               if model not in aroarp_rs :
-                  aroarp_rs[model]={}
-                
-                  for heure in heures :
-                      if heure not in aroarp_rs[model]:
-                         aroarp_rs[model][heure]={}
-                        
-                         for param in params_rs :
-
-                             if param not in aroarp_rs[model][heure]:
-                                aroarp_rs[model][heure][param]={}
-
-                                if param == "Température" : 
-
-                                   aroarp_rs[model][heure][param]= (f.variables['t'][:,heures[heure]['num_val']]) - 273.15
-
-                                    
-                                if param == "Humidité relative":
-                                   aroarp_rs[model][heure][param]= (f.variables['hr'][:,heures[heure]['num_val']])*100
-                                    
-                                if param == "Vent":
-                                   #U=f.variables['u'][:,heures[heure]['num_val']]
-                                   #V=f.variables['u'][:,heures[heure]['num_val']]
-                                   aroarp_rs[model][heure][param]=f.variables['Vamp'][:,heures[heure]['num_val']]
-
-                                #print(aroarp_rs)
-
-        except FileNotFoundError:
-            pass
-    
-    return aroarp_rs
-
-"""
-
-#f = nc.Dataset('/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/2021011400/MESONH_Gt_2021011400.000.nc')
-#day=datetime.date(2021,1,1)
-#params_rs = ["Température","Humidité relative","Vent"]        
-#models = ["Gt", "Rt","Tf"]
-#heures = {"00h":{
-#            "num_val":0},
-#          "3h":{
-#            "num_val":12},
-#          "6h":{
-#            "num_val":24},
-#          "9h":{
-#            "num_val":36},
-#          "12h":{
-#            "num_val":48},
-#          "15h":{
-#            "num_val":60},
-#          "18h":{
-#            "num_val":72},
-#          "21h":{
-#            "num_val":84}}
-#          # on fait l'heure x 4 puisqu'il y a une valeur tous les quarts d'heure; ex: pour 9h on prend la 9x4=36ème valeur
-#data_rs=radio_sondage(day,models,params_rs,heures)
-#print(data_rs)

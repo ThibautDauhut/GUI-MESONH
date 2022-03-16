@@ -89,8 +89,8 @@ app.layout = html.Div([
     html.Div(id='page-content')
 ])
 
-#today=datetime.date.today()
-today=datetime.date.today()-timedelta(days=8)
+today=datetime.date.today()
+#today=datetime.date.today()-timedelta(days=8)
 yesterday=today-timedelta(days=1)
 end_day=today-timedelta(days=1)
 start_day=today-timedelta(days=1)
@@ -320,8 +320,8 @@ def selection_donnees (start_day,end_day):
 
 
 
-#today=datetime.date.today()
-today=datetime.date.today()-timedelta(days=8)
+today=datetime.date.today()
+#today=datetime.date.today()-timedelta(days=8)
 tomorow=today+timedelta(days=1)
 yesterday=today-timedelta(days=1)
 end_day=today
@@ -1173,8 +1173,6 @@ def update_lineB(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
                 chartB[param].add_trace(go.Scatter(x=biais[param]['Rt'][reseau]['time'], y=biais[param]['Rt'][reseau]['values'], line=line_param,name=selection))    
 
 
-
-
 #!!!!!! A COMPLETER POUR MESO-NH ET SURFEX !!!!!!!!!!!!
 
 ## Pour les courbes de MésoNH : 
@@ -1192,13 +1190,15 @@ def update_lineB(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
             today_str=day.strftime('%Y%m%d')
 
             #Gestion du nombre de légende affichée : La légende est affichée si elle absente avant cad si courbe_affichee est vide (courbe affichee est remplie au 1er jour affiche)
-            if selection not in courbe_affichee and dico_model[selection]['name'] in biais['tmp_2m'] and isinstance(biais['tmp_2m'][dico_model[selection]['name']][today_str],(list,np.ndarray)):
+            #if selection not in courbe_affichee and dico_model[selection]['name'] in biais['tmp_2m'] and isinstance(biais['tmp_2m'][dico_model[selection]['name']][today_str],(list,np.ndarray)):
+            if selection not in courbe_affichee and dico_model[selection]['name'] in biais['tmp_2m']:    
 
+                print("RENTRE DANS LA BOUCLE D'AFFICHAGE DE LA LEGENDE")
                 courbe_affichee.append(selection)
                 afficher_legende=True
 
             else:
-
+                print("N'AFFICHE PAS LEGENDE SUR CE JOUR LA")
                 afficher_legende=False
 
 		# Ce montage un peu douteux de if/else permet de n'afficher qu'une seule fois la légende de la courbe MésoNH choisie. Sans ça, le programme affichait autant de fois la légende
