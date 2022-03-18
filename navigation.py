@@ -90,7 +90,7 @@ app.layout = html.Div([
 ])
 
 today=datetime.date.today()
-#today=datetime.date.today()-timedelta(days=8)
+#today=datetime.date.today()-timedelta(days=2)
 yesterday=today-timedelta(days=1)
 end_day=today-timedelta(days=1)
 start_day=today-timedelta(days=1)
@@ -321,7 +321,7 @@ def selection_donnees (start_day,end_day):
 
 
 today=datetime.date.today()
-#today=datetime.date.today()-timedelta(days=8)
+#today=datetime.date.today()-timedelta(days=2)
 tomorow=today+timedelta(days=1)
 yesterday=today-timedelta(days=1)
 end_day=today
@@ -1328,7 +1328,7 @@ options_params_rs = {"Température":
                           "unit":"°C"},
                      "Humidité relative":
                          {"label":"Humidité relative",
-                          "unit":"%"},
+                          "unit":"%"}, #HR n'existe pas dans les obs AMDAR
                      "Vent":
                          {"label":"Vent",
                           "unit":"m/s"}
@@ -1349,7 +1349,10 @@ options_models = {"Gt":{
                     "line":"dashdot"},
                   "ARO":{
                     "name":"ARO-OPER",
-                    "line":"dot"}}
+                    "line":"dot"},
+                  "Ab":{
+                    "name":"OBS-AMDAR",
+                    "line":"solid"}}
 # Ce dictionnaire attribut des types de ligne à chaque modèle tracé.
 
 heures = {"00h":{
@@ -1591,11 +1594,23 @@ def update_rs(wich_heure,date_value,model_choisi):
             afficher_legende=False
         for param in params_rs :
             for model in model_choisi :
-                try :
-                       chart[param].add_trace(go.Scatter(x=data_rs[model][selection][param], y=data_rs[model]['level'],line=dict(color=heures[selection]["color"],dash=options_models[model]["line"]), mode="lines",name=options_models[model]["name"]+' - '+heures[selection]["value"],showlegend=afficher_legende))
 
-                except KeyError:
-                    pass
+                if model == 'Ab' and len(data_rs[model][selection][param]) > 1 :
+                   try:
+
+                      chart[param].add_trace(go.Scatter(x=data_rs[model][selection][param], y=data_rs[model][heure]['level'],line=dict(color=heures[selection]["color"], width=4, dash=options_models[model]["line"]), mode="lines",name=options_models[model]["name"]+' - '+heures[selection]["value"],showlegend=afficher_legende))
+                   except KeyError:
+                       pass
+
+                else:
+
+                   try :
+                          chart[param].add_trace(go.Scatter(x=data_rs[model][selection][param], y=data_rs[model]['level'],line=dict(color=heures[selection]["color"], width=4, dash=options_models[model]["line"]), mode="lines",name=options_models[model]["name"]+' - '+heures[selection]["value"],showlegend=afficher_legende))
+
+                
+
+                   except KeyError:
+                       pass
     list_charts = []
     for param in params_rs:
         chart[param].update_layout(height=1300, width=600,

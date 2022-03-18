@@ -8,15 +8,24 @@ Created on Thu Mar 18 09:21:41 2021
 import netCDF4 as nc
 import datetime
 
+from datetime import timedelta,date
+
 import numpy as np
 
 import matplotlib.pyplot as plt
 
 from scipy import interpolate
 
+#Lecture obs AMDAR
+import read_aida
+
+import pandas as pd
+
+
+
 def radio_sondage(day,models,params_rs,heures,heures_aroarp):
     data_rs={}
-    today_str=day
+    today=day
     today_str=str(day.year)
     if len(str(day.month))==1:
         today_str=today_str+'0'+str(day.month)
@@ -41,6 +50,8 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
 
             if model not in data_rs :
                 data_rs[model]={}
+
+                #print("CLEFS DICO MODELS : ", data_rs.keys())
 
             if 'level' not in data_rs[model]:
                 data_rs[model]['level']= f.variables['level'][:]
@@ -111,25 +122,119 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
                 for heure in heures_aroarp :
 
                     if heure not in data_rs[model]:
-                      data_rs[model][heure]={}
+                       data_rs[model][heure]={}
      
-                      for param in params_rs :
+                    for param in params_rs :
 
-                          if param not in data_rs[model][heure]:
-                             data_rs[model][heure][param]={}
+                        if param not in data_rs[model][heure]:
+                           data_rs[model][heure][param]={}
 
-                             if param == "Température" : 
+                        if param == "Température" : 
 
-                                data_rs[model][heure][param]= (f['t'][heures_aroarp[heure]['num_val'],::-1] - 273.15)
+                           data_rs[model][heure][param]= (f['t'][heures_aroarp[heure]['num_val'],::-1] - 273.15)
 
-                             if param == "Humidité relative":
-                                data_rs[model][heure][param]= (f['hr'][heures_aroarp[heure]['num_val'],::-1]*100)
+                        if param == "Humidité relative":
+                           data_rs[model][heure][param]= (f['hr'][heures_aroarp[heure]['num_val'],::-1]*100)
                                     
-                             if param == "Vent":
-                                data_rs[model][heure][param]=f['Vamp'][heures_aroarp[heure]['num_val'],::-1]
+                        if param == "Vent":
+                           data_rs[model][heure][param]=f['Vamp'][heures_aroarp[heure]['num_val'],::-1]
          
         except FileNotFoundError:
             pass
+
+
+
+
+#Observations AMDAR
+
+    model = 'Ab'
+
+    yesterday = today-timedelta(days=1)
+
+    doy = datetime.datetime(int(yesterday.year),int(yesterday.month),int(yesterday.day)).strftime('%j')
+
+    print("DAY : ", yesterday)
+    print("DOY : ", doy)
+
+    if model not in data_rs :
+
+     data_rs[model] = {}
+ 
+     #Extraction des données sous AIDA
+     (z_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'alt_pre_amdar_cal_%60',model)
+     (t_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'tpr_air_amdar_cal_%60',model)
+     (ff_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'ven_ffmoy_amdar_cal_%60',model)
+      
+     #Construction du dataframe regrouypant Z, T et FF
+     df_z  = pd.DataFrame(list(z_val), index=(time))
+     df_t  = pd.DataFrame(list(t_val), index=(time))
+     df_ff = pd.DataFrame(list(ff_val), index=(time))
+
+     df_amdar=pd.concat([df_z, df_t], axis=1)
+     df_amdar=pd.concat([df_amdar, df_ff], axis=1)
+
+
+     #Nomination des colonnes
+     df_amdar.columns = ['altitude', 'temperature', 'vent']
+
+     #Conversion K -> degC
+     df_amdar['temperature'] = df_amdar['temperature']-273.15
+
+
+
+     ih=0  
+     
+     for heure in heures_aroarp :  
+
+           ih=ih+1
+  
+           if heure not in data_rs[model]:
+              data_rs[model][heure]={}
+
+           #Construction d'une plage horaire dont on va prendre les données
+           if  ih < 5 :
+
+              date_profil = yesterday.strftime('%Y-%m-%d 0'+heure[0:1]+':%M:%S')
+
+              if ih == 1 : 
+
+                 date_start = datetime.datetime.strptime(date_profil, "%Y-%m-%d %H:%M:%S")
+                 date_end   = datetime.datetime.strptime(date_profil, "%Y-%m-%d %H:%M:%S") + timedelta(hours=1)
+
+              else :
+
+                 date_start = datetime.datetime.strptime(date_profil, "%Y-%m-%d %H:%M:%S") - timedelta(hours=1)
+                 date_end   = datetime.datetime.strptime(date_profil, "%Y-%m-%d %H:%M:%S") + timedelta(hours=1)
+
+           else :
+
+              date_profil = yesterday.strftime('%Y-%m-%d '+heure[0:2]+':%M:%S')  
+ 
+              date_start = datetime.datetime.strptime(date_profil, "%Y-%m-%d %H:%M:%S") - timedelta(hours=1)
+              date_end   = datetime.datetime.strptime(date_profil, "%Y-%m-%d %H:%M:%S") + timedelta(hours=1)
+
+           #Sélection de la plage horaire dans le dataframe 
+           mask = (df_amdar.index > date_start) & (df_amdar.index < date_end)
+
+
+           if 'level' not in data_rs[model][heure]:
+
+              data_rs[model][heure]['level'] = list(df_amdar['altitude'].loc[mask])
+               
+              print("Z : ", df_amdar['altitude'].loc[mask])
+
+           for param in params_rs :
+
+               if param not in data_rs[model][heure]:
+                  data_rs[model][heure][param]={}
+
+               if param == "Température" :  
+                
+                  data_rs[model][heure][param] = list(df_amdar['temperature'].loc[mask])
+
+               if param == "Vent":
+
+                  data_rs[model][heure][param] = list(df_amdar['vent'].loc[mask])
   
     return data_rs
 
