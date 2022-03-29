@@ -1,9 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import plotly.graph_objects as go
 import numpy as np
 
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+#import dash_core_components as dcc
+from dash import dcc
+
+#import dash_html_components as html
+from dash import html 
+
 from dash.dependencies import Input, Output, State
 
 import os
@@ -75,14 +82,21 @@ import pandas as pd
 external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css']
 # C'est la css qui va permettre la mise en page
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets,suppress_callback_exceptions=True,title='MeteopoleX')
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets,suppress_callback_exceptions=True,title='MeteopoleX',
+                requests_pathname_prefix='/MeteopoleX/',
+                routes_pathname_prefix='/')
 app.css.config.serve_locally = True
 app.scripts.config.serve_locally = True
 server=app.server
-app.config.update({
-                'requests_pathname_prefix': '/MeteopoleX/',
-                'routes_pathname_prefix': '/'
-                })
+
+#app.config.update({
+#                'requests_pathname_prefix': '/MeteopoleX/',
+#                'routes_pathname_prefix': '/'
+#                })
+
+#app = dash.Dash(
+#    requests_pathname_prefix='/MeteopoleX/',
+#    routes_pathname_prefix='/')
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -1340,7 +1354,7 @@ options_models = {"Gt":{
                     "line":"dash"}, 
                   "Rt":{
                     "name":"MNH-AROME",
-                    "line":"solid"},
+                    "line":"longdash"},
                   "Tf":{
                     "name":"MNH-OBS",
                     "line":"solid"},
@@ -1598,7 +1612,7 @@ def update_rs(wich_heure,date_value,model_choisi):
                 if model == 'Ab' and len(data_rs[model][selection][param]) > 1 :
                    try:
 
-                      chart[param].add_trace(go.Scatter(x=data_rs[model][selection][param], y=data_rs[model][heure]['level'],line=dict(color=heures[selection]["color"], width=4, dash=options_models[model]["line"]), mode="lines",name=options_models[model]["name"]+' - '+heures[selection]["value"],showlegend=afficher_legende))
+                      chart[param].add_trace(go.Scatter(x=data_rs[model][selection][param], y=data_rs[model][heure]['level'],line=dict(color=heures[selection]["color"], width=8, dash=options_models[model]["line"]), mode="markers",name=options_models[model]["name"]+' - '+heures[selection]["value"],showlegend=afficher_legende))
                    except KeyError:
                        pass
 

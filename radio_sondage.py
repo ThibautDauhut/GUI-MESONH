@@ -41,7 +41,7 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
     
     for model in models:
         try :
-            f = nc.Dataset('/d0/MeteopoleX/models/runs/OUTPUT/MESONH/OPER/'+today_str+'00/MESONH_'+model+'_'+today_str+'00.000.nc')
+            f = nc.Dataset('/home/manip/MeteopoleX/models/runs/OUTPUT/MESONH/OPER/'+today_str+'00/MESONH_'+model+'_'+today_str+'00.000.nc')
 
             groupMEAN = '/LES_budgets/Mean/Cartesian/Not_time_averaged/Not_normalized/cart/'
 
@@ -164,27 +164,29 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
      (z_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'alt_pre_amdar_cal_%60',model)
      (t_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'tpr_air_amdar_cal_%60',model)
      (ff_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'ven_ffmoy_amdar_cal_%60',model)
-      
-     #Construction du dataframe regrouypant Z, T et FF
-     df_z  = pd.DataFrame(list(z_val), index=(time))
-     df_t  = pd.DataFrame(list(t_val), index=(time))
-     df_ff = pd.DataFrame(list(ff_val), index=(time))
-
-     df_amdar=pd.concat([df_z, df_t], axis=1)
-     df_amdar=pd.concat([df_amdar, df_ff], axis=1)
-
-
-     #Nomination des colonnes
-     df_amdar.columns = ['altitude', 'temperature', 'vent']
-
-     #Conversion K -> degC
-     df_amdar['temperature'] = df_amdar['temperature']-273.15
-
-
-
-     ih=0  
      
-     for heure in heures_aroarp :  
+     if z_val is not None and t_val is not None and ff_val is not None :
+      
+        #Construction du dataframe regrouypant Z, T et FF
+        df_z  = pd.DataFrame(list(z_val), index=(time))
+        df_t  = pd.DataFrame(list(t_val), index=(time))
+        df_ff = pd.DataFrame(list(ff_val), index=(time))
+
+        df_amdar=pd.concat([df_z, df_t], axis=1)
+        df_amdar=pd.concat([df_amdar, df_ff], axis=1)
+
+
+        #Nomination des colonnes
+        df_amdar.columns = ['altitude', 'temperature', 'vent']
+
+        #Conversion K -> degC
+        df_amdar['temperature'] = df_amdar['temperature']-273.15
+
+
+
+        ih=0  
+     
+        for heure in heures_aroarp :  
 
            ih=ih+1
   

@@ -25,40 +25,21 @@ def mesoNH (start_day,end_day,models,params):
             data_mnh[today_str]={}
             for model in models:
                 try :
-                    f = nc.Dataset('/d0/MeteopoleX/models/runs/OUTPUT/MESONH/OPER/'+today_str+'00/MESONH_'+model+'_'+today_str+'00.000.nc')
-                    f2 = nc.Dataset('/d0/MeteopoleX/models/runs/OUTPUT/MESONH/OPER/'+today_str+'00/MESONH_'+model+'_'+today_str+'00.nc')
+                    f = nc.Dataset('/home/manip/MeteopoleX/models/runs/OUTPUT/MESONH/OPER/'+today_str+'00/MESONH_'+model+'_'+today_str+'00.000.nc')
+                    f2 = nc.Dataset('/home/manip/MeteopoleX/models/runs/OUTPUT/MESONH/OPER/'+today_str+'00/MESONH_'+model+'_'+today_str+'00.nc')
 
                     groupMEAN = '/LES_budgets/Mean/Cartesian/Not_time_averaged/Not_normalized/cart/'
                     groupSURF = '/LES_budgets/Surface/Cartesian/Not_time_averaged/Not_normalized/cart/'
                     groupRAD  = '/LES_budgets/Radiation/Cartesian/Not_time_averaged/Not_normalized/cart/'
 
-                            #TODO try 2 lecture fichier HBLTOP
-                #ou bien /home/models/OUTPUT/MESONH
 
                     if 'time' not in data_mnh[today_str] :
                         data_mnh[today_str]['time'] = {}
-                        
-                        #data_mnh[today_str]['time'] = f.variables['time_les'][1]
 
                         time_since_reseau=f.variables['time_les'][:]
 
-                        #time_reseau = start_day
-                        #print("TIME LES : ", f.variables['time_les'][:])
-                        #print("TIME LES 0 : ", f.variables['time_les'][0])
-                        #print("TIME LES 1 : ", f.variables['time_les'][1])
-                        #print("TIME LES 2 : ", f.variables['time_les'][2])
-                        
                         hhmmss_reseau = datetime.time(0, 15, 0) 
-                        #time_reseau   = datetime.datetime(int(str(start_day)+' '+str(hhmmss_reseau)))
-
                         time_reseau=datetime.datetime.combine(date_run, hhmmss_reseau)
-
-                        print("TODAY STR ", today_str)
-                        print("DATE RUN ", date_run)
-
-                        #time_reseau = datetime.datetime(date_run('%Y'),date_run('%m'),date_run('%d'))
-
-                        #time_reseau = datetime.datetime(2022, 1, 1, 0, 30, 0)               
 
                         time = [time_reseau]
                         swich=[]
@@ -78,8 +59,6 @@ def mesoNH (start_day,end_day,models,params):
                                     P = f[groupMEAN].variables['MEAN_PRE'][:, 2]
                                     D = (100000/P)**(2/7)  
                                     data_mnh[today_str][model][param]= (f[groupMEAN].variables['MEAN_TH'][:, 2] / D)-273.15
-
-                                    print("------------------------------------------------ T2M = -------- ------------------- ",(f[groupMEAN].variables['MEAN_TH'][:, 2] / D)-273.15)
 
                                 if param == "tmp_10m":
                                     P = f[groupMEAN].variables['MEAN_PRE'][:, 5]
@@ -130,8 +109,8 @@ def mesoNH_user(start_day,end_day,id_user,params):
         if today_str not in data_user :
             data_user[today_str]={}
             try :
-                f = nc.Dataset('/d0/MeteopoleX/models/OUTPUT/MESONH/USER/'+today_str+'00/MESONH_Rt_'+today_str+'00_'+id_user+'.000.nc')
-                f2 = nc.Dataset('/d0/MeteopoleX/models/OUTPUT/MESONH/USER/'+today_str+'00/MESONH_Rt_'+today_str+'00_'+id_user+'.nc')
+                f = nc.Dataset('/home/manip/MeteopoleX/models/OUTPUT/MESONH/USER/'+today_str+'00/MESONH_Rt_'+today_str+'00_'+id_user+'.000.nc')
+                f2 = nc.Dataset('/home/manip/MeteopoleX/models/OUTPUT/MESONH/USER/'+today_str+'00/MESONH_Rt_'+today_str+'00_'+id_user+'.nc')
                 if 'time' not in data_user[today_str] :
                         data_user[today_str]['time'] = {}
                         time_since_reseau=f['THT'][:,15].data

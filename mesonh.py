@@ -8,17 +8,33 @@ Contact: axel.bouchet@meteo.fr
 
 """
 
+
+import os,sys
+
+#os.system('source /home/manip/.bashrc')
+#PathWork = '/home/manip/MeteopoleX/Site_web_dev/'
+#sys.path.insert(0, PathWork)
+import read_aida
+
+
+
+
 import numpy as np
 from datetime import datetime, timedelta
 from subprocess import call
-import os
+
+
 import netCDF4 as nc
 import shortuuid
-import read_aida
+
+
+
 import glob
 
-path = '/d0/MeteopoleX/models/MNH-V5-5-0/MY_RUN/OPER/'  # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/web_20210402/'
-path_output = '/d0/MeteopoleX/models/runs/OUTPUT/MESONH/'  # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/'
+path = '/home/manip/MeteopoleX/models/MNH-V5-5-0/MY_RUN/OPER/'  # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/web_20210402/'
+path_output = '/home/manip/MeteopoleX/models/runs/OUTPUT/MESONH/'  # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/'
+
+
 
 
 class MesoNH:
