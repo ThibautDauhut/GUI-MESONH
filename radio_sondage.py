@@ -160,24 +160,30 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
 
      data_rs[model] = {}
  
-     #Extraction des données sous AIDA
+     #Extraction des données AMDAR sous AIDA
      (z_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'alt_pre_amdar_cal_%60',model)
      (t_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'tpr_air_amdar_cal_%60',model)
      (ff_val, time, header)=read_aida.donnees(doy,doy,str(today.year),'ven_ffmoy_amdar_cal_%60',model)
-     
-     if z_val is not None and t_val is not None and ff_val is not None :
+
+     #Récupération des séries temporelles Météopôle-Flux pour avoir un point à Z=10m  
+     (t10, time2, header2)=read_aida.donnees(doy,doy,str(today.year),"tpr_air_ht_c1_%60_Met_%1800",'Tf') 
+     (ff10, time2, header2)=read_aida.donnees(doy,doy,str(today.year),"ven_ff_10mn_c1_UV_%1800",'Tf')
+
+     #Impossible de boucler sur des 'None' : on ne prend les profils seulement lorsque les valeurs existent     
+     if z_val is not None and t_val is not None and ff_val is not None and t10 is not None and ff10 is not None:
       
         #Construction du dataframe regrouypant Z, T et FF
         df_z  = pd.DataFrame(list(z_val), index=(time))
         df_t  = pd.DataFrame(list(t_val), index=(time))
         df_ff = pd.DataFrame(list(ff_val), index=(time))
 
+
         df_amdar=pd.concat([df_z, df_t], axis=1)
         df_amdar=pd.concat([df_amdar, df_ff], axis=1)
-
+ 
 
         #Nomination des colonnes
-        df_amdar.columns = ['altitude', 'temperature', 'vent']
+        df_amdar.columns = ['altitude', 'temperature', 'vent']        
 
         #Conversion K -> degC
         df_amdar['temperature'] = df_amdar['temperature']-273.15
@@ -187,6 +193,12 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
         ih=0  
      
         for heure in heures_aroarp :  
+        
+           print("HEURE AROARP = ", heure)
+           
+           heure_num = heures_aroarp[heure]['num_val']
+           
+           print("HEURE NUMVAL = ", heure_num)
 
            ih=ih+1
   
@@ -217,13 +229,26 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
 
            #Sélection de la plage horaire dans le dataframe 
            mask = (df_amdar.index > date_start) & (df_amdar.index < date_end)
-
+ 
+           
+           #Observations à z=10m : toutes les 30min, on prend (H*2)-1 pour les avoir aux heures H
+           T_10m  = t10[(heure_num*2)-1]
+           FF_10m = ff10[(heure_num*2)-1]
+           TIME  =  time2[(heure_num*2)-1]
+         
+           #Ajout des valeurs à 10m au DataFrame correspondant           
+           dict_10m = {'altitude': 10, 'temperature':[T_10m], 'vent':[FF_10m]}
+           
+           df_10m = pd.DataFrame(dict_10m, index=[TIME])             
+           df_amdar = df_amdar.append(df_10m)
+          
+           #Sélection de la plage horaire dans le dataframe 
+           mask = (df_amdar.index > date_start) & (df_amdar.index < date_end)           
 
            if 'level' not in data_rs[model][heure]:
 
               data_rs[model][heure]['level'] = list(df_amdar['altitude'].loc[mask])
                
-              print("Z : ", df_amdar['altitude'].loc[mask])
 
            for param in params_rs :
 
@@ -237,6 +262,7 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
                if param == "Vent":
 
                   data_rs[model][heure][param] = list(df_amdar['vent'].loc[mask])
+
   
     return data_rs
 

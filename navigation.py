@@ -1533,18 +1533,6 @@ multi_select_line_chart_model = html.Div([
 #        dcc.Input(id = 'id_user5',type = 'text',placeholder = 'id de la simulation à rajouter')]) # Attention : dcc.Input != Input (voir plus bas)
 # Les dcc.Input sont des carrés où l'utilisateur peut rentrer des info : ici type = 'text' donc du texte, 
 
-
-
-
-
-
-
-
-
-
-
-
-
     
 #Premier chargement des données à la date d'aujourd'hui
 data_rs = radio_sondage.radio_sondage(day,models,params_rs,heures,heures_aroarp)
@@ -1612,7 +1600,7 @@ def update_rs(wich_heure,date_value,model_choisi):
                 if model == 'Ab' and len(data_rs[model][selection][param]) > 1 :
                    try:
 
-                      chart[param].add_trace(go.Scatter(x=data_rs[model][selection][param], y=data_rs[model][heure]['level'],line=dict(color=heures[selection]["color"], width=8, dash=options_models[model]["line"]), mode="markers",name=options_models[model]["name"]+' - '+heures[selection]["value"],showlegend=afficher_legende))
+                      chart[param].add_trace(go.Scatter(x=data_rs[model][selection][param], y=data_rs[model][selection]['level'],line=dict(color=heures[selection]["color"], width=8, dash=options_models[model]["line"]), mode="markers",name=options_models[model]["name"]+' - '+heures[selection]["value"],showlegend=afficher_legende))
                    except KeyError:
                        pass
 
