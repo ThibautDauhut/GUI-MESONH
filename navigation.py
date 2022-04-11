@@ -1338,7 +1338,7 @@ biais_layout = html.Div([
 
 
 
-'''
+
 
 ##############################
 #
@@ -1351,117 +1351,105 @@ biais_layout = html.Div([
 ############### Calcul des biais moyens #########
 
 
-data        = selection_donnees(start_day,end_day)
-data_mnh    = lecture_mesoNH.mesoNH(start_day,end_day,models,params) #Pour ajouter un nouveau run de MesoNH, changer la liste models : en créer une autre
-data_surfex = lecture_surfex.surfex(start_day,end_day,models,params)
+#data        = selection_donnees(start_day,end_day)
+#data_mnh    = lecture_mesoNH.mesoNH(start_day,end_day,models,params) #Pour ajouter un nouveau run de MesoNH, changer la liste models : en créer une autre
+#data_surfex = lecture_surfex.surfex(start_day,end_day,models,params)
 
-biais       = calcul_biais(start_day,end_day)
+#biais       = calcul_biais(start_day,end_day)
+
+
+
+
+# Extraction des données nécessaires
+#data        = selection_donnees(start_day,end_day)
+#data_mnh    = lecture_mesoNH.mesoNH(start_day,end_day,models,params) #Pour ajouter un nouveau run de MesoNH, changer la liste models : en créer une autre
+#data_surfex = lecture_surfex.surfex(start_day,end_day,models,params)
+
+#biais       = calcul_biais(start_day,end_day)
+
+
+#Initialisation du DataFrame final vide
+DF=[]
+
+#Axe des temps: on prend la résolution des obs
+DF= pd.DataFrame(DF, index=list(data['tmp_2m']['Tf']['time']))
+
+for param in params:
+
+    for model in models:
+
+        if model != 'Tf' :
+
+           #Ajout des données ARO/ARP OPER
+           for reseau in reseaux:
+
+               if len(biais[param][model][reseau]) > 1 :
+
+                  dico_loc= {}
+                  df_loc  = []
+                   
+                  #Nom des colonnes du DF
+                  colname = str(param+'_'+model+'_'+reseau)
+                  #print(colname)
+
+                  dico_loc = {colname:list(biais[param][model][reseau]['values'])}
+                  df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
+
+                  DF = pd.concat([DF, df_loc], axis=1)
+
+
+             
+           #Ajout des données MNH-OPER            
+           nb_jour = (end_day-start_day).days
+
+           df_mnh=[]
+           df_mnh = pd.DataFrame(df_mnh)
+
+           for i in range(nb_jour+1):
+
+               day=start_day+timedelta(days=i)
+               today_str=day.strftime('%Y%m%d')
+               
+               if len(biais[param][model][str(today_str)]) > 1 :
+               
+                  df_loc = []
+                  df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
+
+                  colname = str(param+'_MesoNH_'+model)
+
+                  try:
+               
+                     data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
+                     df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
+             
+                     df_mnh = pd.concat([df_mnh, df_loc], axis=0)
+               
+                  except:
+                     pass
+          
+           DF = pd.concat([DF, df_mnh], axis=1)
+
+
+
+
+#Conversion colonnes type 'object' en type 'numeric'
+#Sinon le 'groupby' enlève les colonnes 'object'
+
+cols =DF.columns[DF.dtypes.eq('object')]
+DF[cols] = DF[cols].astype('float')
+
+#Dataframe regroupé par heures
+DF_CyDi = DF.groupby(DF.index.hour).mean()
+
+print(DF_CyDi)
 
 
 def biais_moyen(start_day,end_day):
-
-
-    # Extraction des données nécessaires
-    data        = selection_donnees(start_day,end_day)
-    data_mnh    = lecture_mesoNH.mesoNH(start_day,end_day,models,params) #Pour ajouter un nouveau run de MesoNH, changer la liste models : en créer une autre
-    data_surfex = lecture_surfex.surfex(start_day,end_day,models,params)
-
-    biais       = calcul_biais(start_day,end_day)
-
 
     chartM = {}
     graphM = {}
 
     biais_moy = {}
-
-    #Initialisation du DataFrame final vide
-    DF=[]
-    
-    #print(data['tmp_2m']['Tf']['time'])
-    #print(data.keys())
-    
-
-    #Axe des temps: on prend la résolution des obs
-    DF= pd.DataFrame(DF, index=list(data['tmp_2m']['Tf']['time']))
-
-    for param in params:
-        
-#        if param not in biais_moy:
-#            biais_moy[param] = {}
-
-
-        for model in models:
-        
-#            if model not in biais_moy:
-#               biais_moy[param][model] = {}
-    
-            if model != 'Tf' :
-
-
-               #Ajout des données ARO/ARP OPER
-               for reseau in reseaux:
-               
-#                   if reseau not in biais_moy:
-#                      biais_moy[param][model][reseau] = {}
-
-                   if len(biais[param][model][reseau]) > 1 :
-
-                      dico_loc= {}
-                      df_loc  = []
-                   
-                      #Nom des colonnes du DF
-                      colname = str(param+'_'+model+'_'+reseau)
-                      #print(colname)
-
-                      dico_loc = {colname:list(biais[param][model][reseau]['values'])}
-                      df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
-
-                      DF = pd.concat([DF, df_loc], axis=1)
-
-
-             
-               #Ajout des données MNH-OPER            
-               nb_jour = (end_day-start_day).days
-
-               df_mnh=[]
-               df_mnh = pd.DataFrame(df_mnh)
-
-               for i in range(nb_jour+1):
-
-                   day=start_day+timedelta(days=i)
-                   today_str=day.strftime('%Y%m%d')
-               
-                   if len(biais[param][model][str(today_str)]) > 1 :
-               
-                      df_loc = []
-                      df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
-
-                      colname = str(param+'_MesoNH_'+model)
-
-                      try:
-               
-                         data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
-                         df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
-             
-                         df_mnh = pd.concat([df_mnh, df_loc], axis=0)
-               
-                      except:
-                         pass
-          
-               DF = pd.concat([DF, df_mnh], axis=1)
-
-
-
-
-    #Conversion colonnes type 'object' en type 'numeric'
-    #Sinon le 'groupby' enlève les colonnes 'object'
-
-    cols =DF.columns[DF.dtypes.eq('object')]
-    DF[cols] = DF[cols].astype('float')
-
-    #Dataframe regroupé par heures
-    DF_CyDi = DF.groupby(DF.index.hour).mean()
-
     
     #Intégration des données du DataFrame DF_CyDi dans le dictionnaire biais_moy
     for param in params:
@@ -1482,17 +1470,29 @@ def biais_moyen(start_day,end_day):
                    if reseau not in biais_moy[param][model]:
                       biais_moy[param][model][reseau] = {}
     
-        
-                   biais_moy[param][model][reseau]['values']  = list(DF_CyDi[str(param+'_'+model+'_'+reseau)])
-                   biais_moy[param][model][reseau]['time']    = list(DF_CyDi.index)
+                   colname = str(param+'_'+model+'_'+reseau)
+                   
+                   try:
+                      biais_moy[param][model][reseau]['values']  = list(DF_CyDi[colname])
+                      biais_moy[param][model][reseau]['time']    = list(DF_CyDi.index)
+                   except:
+                      biais_moy[param][model][reseau]['values']  = 0.
+                      biais_moy[param][model][reseau]['time']    = list(DF_CyDi.index)
+                      pass
                    
             if 'MNH' not in biais_moy[param][model]:
            
                biais_moy[param][model]['MNH'] = {}
-               
-            biais_moy[param][model]['MNH']['values']  = list(DF_CyDi[str(param+'_MesoNH_'+model)])
-            biais_moy[param][model]['MNH']['time']    = list(DF_CyDi.index)
-               
+            
+            colname = str(param+'_MesoNH_'+model) 
+            
+            try:  
+               biais_moy[param][model]['MNH']['values']  = list(DF_CyDi[colname])
+               biais_moy[param][model]['MNH']['time']    = list(DF_CyDi.index)
+            except:
+               biais_moy[param][model]['MNH']['values']  = 0.
+               biais_moy[param][model]['MNH']['time']    = list(DF_CyDi.index)
+               pass   
                
     
     
@@ -1543,7 +1543,7 @@ calendrier = html.Div([
 # Le dcc.Dropdown est un objet dash qui permet l'affichage des options sélectionnables quand on clique dessus, puis la sélection d'une ou plusieurs options.
 
 
-multi_select_line_chartB_ARP = dcc.Dropdown(
+multi_select_line_chartM_ARP = dcc.Dropdown(
         id = "multi_select_line_chartM_ARP",
         options = [{"value":label, "label":label} for label in ["Arp_J-1_00h","Arp_J-1_12h","Arp_J0_00h","Arp_J0_12h",]],
         value = ["Arp_J0_00h","Arp_J-1_12h"],
@@ -1551,7 +1551,7 @@ multi_select_line_chartB_ARP = dcc.Dropdown(
         clearable = False
     )
 
-multi_select_line_chartB_ARO = dcc.Dropdown(
+multi_select_line_chartM_ARO = dcc.Dropdown(
         id = "multi_select_line_chartM_ARO",
         options = [{"value":label, "label":label} for label in ["Aro_J-1_00h","Aro_J-1_12h","Aro_J0_00h","Aro_J0_12h"]],
         value = ["Aro_J0_00h","Aro_J-1_12h"],
@@ -1559,7 +1559,7 @@ multi_select_line_chartB_ARO = dcc.Dropdown(
         clearable = False
     )
 
-multi_select_line_chartB_MNH = dcc.Dropdown(
+multi_select_line_chartM_MNH = dcc.Dropdown(
         id = "multi_select_line_chartM_MNH",
         options = [{"value":label, "label":label} for label in ["MésoNH_Arp","MésoNH_Aro","MésoNH_Obs"]],
         value = ["MésoNH_Arp","MésoNH_Aro"],
@@ -1567,7 +1567,7 @@ multi_select_line_chartB_MNH = dcc.Dropdown(
         clearable = False
     )
 
-multi_select_line_chartB_SURFEX = dcc.Dropdown(
+multi_select_line_chartM_SURFEX = dcc.Dropdown(
         id = "multi_select_line_chartM_SURFEX",
         options = [{"value":label, "label":label} for label in ["SURFEX_Arp","SURFEX_Aro","SURFEX_Obs"]],
         value = ["SURFEX_Arp"],
@@ -1837,15 +1837,15 @@ menu = html.Div([
 
 # le menu diffère de chaque page, il contient une liste de lien (dcc.Link) dont les arguments sont le nom souhaité et son url
 
-'''
+
 biaisM_layout = html.Div([
     html.H1('Biais Moyens'),
     menu,
     calendrier,
-#    html.Div([multi_select_line_chartM_ARP,multi_select_line_chartM_ARO,
-#    multi_select_line_chartM_MNH,multi_select_line_chartM_SURFEX],className="eight columns",style={"text-align": "center", "justifyContent":"center"}),
-    html.Div([multi_select_line_chartB_ARP,multi_select_line_chartB_ARO,
-    multi_select_line_chartB_MNH,multi_select_line_chartB_SURFEX],className="eight columns",style={"text-align": "center", "justifyContent":"center"}),
+    html.Div([multi_select_line_chartM_ARP,multi_select_line_chartM_ARO,
+    multi_select_line_chartM_MNH,multi_select_line_chartM_SURFEX],className="eight columns",style={"text-align": "center", "justifyContent":"center"}),
+#    html.Div([multi_select_line_chartB_ARP,multi_select_line_chartB_ARO,
+#    multi_select_line_chartB_MNH,multi_select_line_chartB_SURFEX],className="eight columns",style={"text-align": "center", "justifyContent":"center"}),
     id_user,
     row2,
 ],className="twelve columns",style={"text-align": "center", "justifyContent":"center"})
