@@ -1368,83 +1368,92 @@ biais_layout = html.Div([
 #biais       = calcul_biais(start_day,end_day)
 
 
-#Initialisation du DataFrame final vide
-DF=[]
-
-#Axe des temps: on prend la résolution des obs
-DF= pd.DataFrame(DF, index=list(data['tmp_2m']['Tf']['time']))
-
-for param in params:
-
-    for model in models:
-
-        if model != 'Tf' :
-
-           #Ajout des données ARO/ARP OPER
-           for reseau in reseaux:
-
-               if len(biais[param][model][reseau]) > 1 :
-
-                  dico_loc= {}
-                  df_loc  = []
-                   
-                  #Nom des colonnes du DF
-                  colname = str(param+'_'+model+'_'+reseau)
-                  #print(colname)
-
-                  dico_loc = {colname:list(biais[param][model][reseau]['values'])}
-                  df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
-
-                  DF = pd.concat([DF, df_loc], axis=1)
-
-
-             
-           #Ajout des données MNH-OPER            
-           nb_jour = (end_day-start_day).days
-
-           df_mnh=[]
-           df_mnh = pd.DataFrame(df_mnh)
-
-           for i in range(nb_jour+1):
-
-               day=start_day+timedelta(days=i)
-               today_str=day.strftime('%Y%m%d')
-               
-               if len(biais[param][model][str(today_str)]) > 1 :
-               
-                  df_loc = []
-                  df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
-
-                  colname = str(param+'_MesoNH_'+model)
-
-                  try:
-               
-                     data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
-                     df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
-             
-                     df_mnh = pd.concat([df_mnh, df_loc], axis=0)
-               
-                  except:
-                     pass
-          
-           DF = pd.concat([DF, df_mnh], axis=1)
-
-
-
-
-#Conversion colonnes type 'object' en type 'numeric'
-#Sinon le 'groupby' enlève les colonnes 'object'
-
-cols =DF.columns[DF.dtypes.eq('object')]
-DF[cols] = DF[cols].astype('float')
-
-#Dataframe regroupé par heures
-DF_CyDi = DF.groupby(DF.index.hour).mean()
-
-print(DF_CyDi)
 
 
 def biais_moyen(start_day,end_day):
+
+    #Initialisation du DataFrame final vide
+    DF=[]
+
+    #Axe des temps: on prend la résolution des obs
+    DF= pd.DataFrame(DF, index=list(data['tmp_2m']['Tf']['time']))
+    
+    print(data['tmp_2m']['Tf']['time'])
+    print(data['tmp_2m']['Tf']['values'])    
+
+    for param in params:
+
+        for model in models:
+
+            if model != 'Tf' :
+
+               #Ajout des données ARO/ARP OPER
+               for reseau in reseaux:
+
+                   #if len(biais[param][model][reseau]) > 1 :
+
+                   dico_loc= {}
+                   df_loc  = []
+                   
+                   #Nom des colonnes du DF
+                   colname = str(param+'_'+model+'_'+reseau)
+                   #print(colname)
+                   
+                   try:
+                      dico_loc = {colname:list(biais[param][model][reseau]['values'])}
+                      df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
+
+                      DF = pd.concat([DF, df_loc], axis=1)
+                   except:
+                      pass
+
+             
+               #Ajout des données MNH-OPER            
+               nb_jour = (end_day-start_day).days
+
+               df_mnh=[]
+               df_mnh = pd.DataFrame(df_mnh)
+
+               for i in range(nb_jour+1):
+
+                   day=start_day+timedelta(days=i)
+                   today_str=day.strftime('%Y%m%d')
+               
+                   #if len(biais[param][model][str(today_str)]) > 1 :
+               
+                   df_loc = []
+                   colname = str(param+'_MesoNH_'+model)
+                      
+                   try:
+                      
+                      df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
+
+                      data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
+                      df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
+             
+                      df_mnh = pd.concat([df_mnh, df_loc], axis=0)
+               
+                   except:
+                      pass
+          
+               DF = pd.concat([DF, df_mnh], axis=1)
+
+
+
+
+   #Conversion colonnes type 'object' en type 'numeric'
+   #Sinon le 'groupby' enlève les colonnes 'object'
+
+    cols =DF.columns[DF.dtypes.eq('object')]
+    DF[cols] = DF[cols].astype('float')
+
+    #Dataframe regroupé par heures
+    DF_CyDi = DF.groupby(DF.index.hour).mean()
+
+    print(DF_CyDi)
+
+
+    #def biais_moyen(start_day,end_day):
 
     chartM = {}
     graphM = {}
@@ -1795,7 +1804,7 @@ def update_lineM(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
     for param in params:
 
         chartM[param].update_layout(height=500, width=1000,
-                         xaxis_title="Date et heure",
+                         xaxis_title="Heure de la journéee",
                          yaxis_title=str(dico_params[param]['unit']),
                          title=dico_params[param]['title'])
 
@@ -1819,7 +1828,7 @@ all_graphsM = []
 for param in params:
     all_graphsM.append(html.Div(graphM[param],className="six columns", style={'display': 'inline-block'}))
 
-row2 = html.Div(children=all_graphsM, className="twelve columns")
+row3 = html.Div(children=all_graphsM, className="twelve columns")
 
 # Puisqu'on n'a pas la main sur la css (pour l'instant)(cf external_stylesheets au début du code), on joue sur les html.Div.
 # Ici par exemple, chaque graph est d'abord mis dans une Div dont on réduit la taille ("className="five columns"),
@@ -1847,7 +1856,7 @@ biaisM_layout = html.Div([
 #    html.Div([multi_select_line_chartB_ARP,multi_select_line_chartB_ARO,
 #    multi_select_line_chartB_MNH,multi_select_line_chartB_SURFEX],className="eight columns",style={"text-align": "center", "justifyContent":"center"}),
     id_user,
-    row2,
+    row3,
 ],className="twelve columns",style={"text-align": "center", "justifyContent":"center"})
 
 
