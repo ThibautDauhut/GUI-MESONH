@@ -153,8 +153,6 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
 
     doy = datetime.datetime(int(yesterday.year),int(yesterday.month),int(yesterday.day)).strftime('%j')
 
-    print("DAY : ", yesterday)
-    print("DOY : ", doy)
 
     if model not in data_rs :
 
@@ -193,12 +191,8 @@ def radio_sondage(day,models,params_rs,heures,heures_aroarp):
         ih=0  
      
         for heure in heures_aroarp :  
-        
-           print("HEURE AROARP = ", heure)
-           
+
            heure_num = heures_aroarp[heure]['num_val']
-           
-           print("HEURE NUMVAL = ", heure_num)
 
            ih=ih+1
   

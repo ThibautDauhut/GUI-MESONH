@@ -111,14 +111,6 @@ start_day=today-timedelta(days=7)
 doy1 = datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%j')
 doy2 = datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)).strftime('%j')
 
-print(today)
-
-#print(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%j'))
-#print(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%h'))
-#print(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%m'))
-#print(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)).strftime('%M'))
-
-#print(datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)).strftime('%M'))
 
 ##############################
 #
@@ -1212,12 +1204,12 @@ def update_lineB(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
             #if selection not in courbe_affichee and dico_model[selection]['name'] in biais['tmp_2m'] and isinstance(biais['tmp_2m'][dico_model[selection]['name']][today_str],(list,np.ndarray)):
             if selection not in courbe_affichee and dico_model[selection]['name'] in biais['tmp_2m']:    
 
-                print("RENTRE DANS LA BOUCLE D'AFFICHAGE DE LA LEGENDE")
+
                 courbe_affichee.append(selection)
                 afficher_legende=True
 
             else:
-                print("N'AFFICHE PAS LEGENDE SUR CE JOUR LA")
+
                 afficher_legende=False
 
 		# Ce montage un peu douteux de if/else permet de n'afficher qu'une seule fois la légende de la courbe MésoNH choisie. Sans ça, le programme affichait autant de fois la légende
@@ -1351,25 +1343,6 @@ biais_layout = html.Div([
 ############### Calcul des biais moyens #########
 
 
-#data        = selection_donnees(start_day,end_day)
-#data_mnh    = lecture_mesoNH.mesoNH(start_day,end_day,models,params) #Pour ajouter un nouveau run de MesoNH, changer la liste models : en créer une autre
-#data_surfex = lecture_surfex.surfex(start_day,end_day,models,params)
-
-#biais       = calcul_biais(start_day,end_day)
-
-
-
-
-# Extraction des données nécessaires
-#data        = selection_donnees(start_day,end_day)
-#data_mnh    = lecture_mesoNH.mesoNH(start_day,end_day,models,params) #Pour ajouter un nouveau run de MesoNH, changer la liste models : en créer une autre
-#data_surfex = lecture_surfex.surfex(start_day,end_day,models,params)
-
-#biais       = calcul_biais(start_day,end_day)
-
-
-
-
 def biais_moyen(start_day,end_day):
 
     #Initialisation du DataFrame final vide
@@ -1377,9 +1350,6 @@ def biais_moyen(start_day,end_day):
 
     #Axe des temps: on prend la résolution des obs
     DF= pd.DataFrame(DF, index=list(data['tmp_2m']['Tf']['time']))
-    
-    print(data['tmp_2m']['Tf']['time'])
-    print(data['tmp_2m']['Tf']['values'])    
 
     for param in params:
 
@@ -1450,11 +1420,8 @@ def biais_moyen(start_day,end_day):
     #Dataframe regroupé par heures
     DF_CyDi = DF.groupby(DF.index.hour).mean()
 
-    print(DF_CyDi)
 
-
-    #def biais_moyen(start_day,end_day):
-
+    #Création du dictionnaire associé aux biais moyens + graphes html
     chartM = {}
     graphM = {}
 
@@ -1745,12 +1712,12 @@ def update_lineM(reseau2,reseau3,reseau4,reseau5,start_day,end_day,id_user1,id_u
             #if selection not in courbe_affichee and dico_model[selection]['name'] in biais['tmp_2m'] and isinstance(biais['tmp_2m'][dico_model[selection]['name']][today_str],(list,np.ndarray)):
             if selection not in courbe_affichee and dico_model[selection]['name'] in biais['tmp_2m']:    
 
-                print("RENTRE DANS LA BOUCLE D'AFFICHAGE DE LA LEGENDE")
+
                 courbe_affichee.append(selection)
                 afficher_legende=True
 
             else:
-                print("N'AFFICHE PAS LEGENDE SUR CE JOUR LA")
+
                 afficher_legende=False
 
 		# Ce montage un peu douteux de if/else permet de n'afficher qu'une seule fois la légende de la courbe MésoNH choisie. Sans ça, le programme affichait autant de fois la légende
