@@ -1374,6 +1374,8 @@ def biais_moyen(start_day,end_day):
                       df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
 
                       DF = pd.concat([DF, df_loc], axis=1)
+                      
+                      #print("OK POUR BIAIS MOY OPER")
                    except:
                       pass
 
@@ -1384,7 +1386,7 @@ def biais_moyen(start_day,end_day):
                df_mnh=[]
                df_mnh = pd.DataFrame(df_mnh)
 
-               for i in range(nb_jour+1):
+               for i in range(nb_jour):
 
                    day=start_day+timedelta(days=i)
                    today_str=day.strftime('%Y%m%d')
@@ -1393,15 +1395,26 @@ def biais_moyen(start_day,end_day):
                
                    df_loc = []
                    colname = str(param+'_MesoNH_'+model)
+                   
+                   print(biais.keys())
+                   #df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
                       
                    try:
-                      
+                   
+                      print("ESSAI DE CREER DF BIAIS SUR LE JOUR : ", str(today_str))
                       df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
-
+                      print("OK POUR CREATION DF BIAIS SUR LE JOUR : ", str(today_str))
+                      
                       data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
+                      print("NOM DE LA COLONNE : ", colname)
+                      
+                      
                       df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
+                      print("CREATION DF LOCAL POUR LE JOUR : ", str(today_str))
              
                       df_mnh = pd.concat([df_mnh, df_loc], axis=0)
+                      
+                      print("OK POUR BIAIS MOY MNH")
                
                    except:
                       pass
@@ -1416,10 +1429,13 @@ def biais_moyen(start_day,end_day):
 
     cols =DF.columns[DF.dtypes.eq('object')]
     DF[cols] = DF[cols].astype('float')
+    
+    print(DF.index)
 
     #Dataframe regroupé par heures
     DF_CyDi = DF.groupby(DF.index.hour).mean()
 
+    
 
     #Création du dictionnaire associé aux biais moyens + graphes html
     chartM = {}
@@ -1485,6 +1501,9 @@ def biais_moyen(start_day,end_day):
          # Ces 2 dernières étapes sont essentielles : d'abord on effectue le tracé, puis on le transforme en objet html pour pouvoir l'afficher
 
     return biais_moy, chartM, graphM
+
+
+
 
 biais_moy, chartM, graphM = biais_moyen(start_day,end_day)
 
