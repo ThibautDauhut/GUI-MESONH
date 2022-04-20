@@ -309,7 +309,21 @@ def selection_donnees (start_day,end_day):
 
                                else:
 
-                                  i=i+1                
+                                  i=i+1  
+                                  
+                        #Les flux pour AROME et ARPEGE OPER sont agrégés entre H et H+1 : On les replace à H:30 pour davantage de réalisme
+                        if param == 'flx_mvt' or param == 'flx_chaleur_sens' or param == 'flx_chaleur_lat' or param == 'SWD' or param == 'LWU' :
+
+                           if time is not None:                       
+                       
+                              i=0
+                     
+                              for ts in time:
+                      
+                                  time[i]  = time[i] - datetime.timedelta(minutes=30)
+
+                                  i=i+1
+              
 
 
                       
@@ -818,7 +832,7 @@ def calcul_biais(start_day,end_day):
 
 
     #création d'un dataframe vide avec les valeurs des dates de la période (start_day,end_day), toutes les heures car modele OPER = sorties horaires.
-    dt=mdates.num2date(mdates.drange(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)),datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)),datetime.timedelta(hours=1)))
+    dt=mdates.num2date(mdates.drange(datetime.datetime(int(start_day.year),int(start_day.month),int(start_day.day)),datetime.datetime(int(end_day.year),int(end_day.month),int(end_day.day)),datetime.timedelta(minutes=30)))
 
     dataallyear = [i.replace(tzinfo=None) for i in dt]
     dataframe_sanstrou = pd.DataFrame(index=dataallyear)   
@@ -853,7 +867,7 @@ def calcul_biais(start_day,end_day):
                 (values_mod, time_mod, header_mod)=read_aida.donnees(doy1,doy2,str(today.year),id_aida_mod,model)
 
                       
-                       #Correction des données ARPEGE parfois datées à H-1:59 au lieu de H:00
+                #Correction des données ARPEGE parfois datées à H-1:59 au lieu de H:00
                 if time_mod is not None:                       
                        
                       i=0
@@ -870,11 +884,23 @@ def calcul_biais(start_day,end_day):
 
                              i=i+1   
 
+                #Les flux pour AROME et ARPEGE OPER sont agrégés entre H et H+1 : On les replace à H:30 pour davantage de réalisme
+                if param == 'flx_mvt' or param == 'flx_chaleur_sens' or param == 'flx_chaleur_lat' or param == 'SWD' or param == 'LWU' :
+
+                   if time_mod is not None:                       
+                       
+                      i=0
+                     
+                      for ts in time_mod:
+                      
+                          time_mod[i]  = time_mod[i] - datetime.timedelta(minutes=30)
+
+                          i=i+1
 
 
                 if values_mod is None or values_obs is None :
 
-                        biais[param][model][reseau]['values'] = 0.
+                        biais[param][model][reseau]['values'] = np.nan
 
                          
                 else:   
@@ -892,7 +918,8 @@ def calcul_biais(start_day,end_day):
                         df_biais = df_mod - df_obs
 
                         #df_biais = dataframe_sanstrou.join(df_biais)
-                        df_biais = df_biais.fillna(0)
+                        #df_biais = df_biais.fillna(0)
+                        df_biais = df_biais.dropna()
                         df_biais.index = pd.to_datetime(df_biais.index)
 
                         date_list = df_biais.index.strftime("%Y-%m-%d %H:%M:%S").tolist()
@@ -1390,34 +1417,42 @@ def biais_moyen(start_day,end_day):
 
                    day=start_day+timedelta(days=i)
                    today_str=day.strftime('%Y%m%d')
+                  #if len(biais[param][model][str(today_str)]) > 1 :
+                  
+                  
+                   try: 
                
-                   #if len(biais[param][model][str(today_str)]) > 1 :
-               
-                   df_loc = []
-                   colname = str(param+'_MesoNH_'+model)
+                     df_loc = []
+                     colname = str(param+'_MesoNH_'+model)
+                     dummyarray = np.full(len(biais[param][model][str(today_str)]['time']), np.nan)
                    
-                   print(biais.keys())
-                   #df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
-                      
-                   try:
+                     df_nan = pd.DataFrame(data={colname:list(dummyarray)}, index=list(biais[param][model][str(today_str)]['time']))
                    
-                      print("ESSAI DE CREER DF BIAIS SUR LE JOUR : ", str(today_str))
-                      df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
-                      print("OK POUR CREATION DF BIAIS SUR LE JOUR : ", str(today_str))
+                     print(biais.keys())
+                     #df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
                       
-                      data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
-                      print("NOM DE LA COLONNE : ", colname)
+                  
+                   
+                     print("ESSAI DE CREER DF BIAIS SUR LE JOUR : ", str(today_str))
+                     df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
+                     print("OK POUR CREATION DF BIAIS SUR LE JOUR : ", str(today_str))
+                      
+                     data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
+                     print("NOM DE LA COLONNE : ", colname)
                       
                       
-                      df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
-                      print("CREATION DF LOCAL POUR LE JOUR : ", str(today_str))
+                     df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
+                     print("CREATION DF LOCAL POUR LE JOUR : ", str(today_str))
              
-                      df_mnh = pd.concat([df_mnh, df_loc], axis=0)
+                     df_mnh = pd.concat([df_mnh, df_loc], axis=0)
                       
-                      print("OK POUR BIAIS MOY MNH")
+                     print("OK POUR BIAIS MOY MNH")
                
                    except:
-                      pass
+                      
+                     #df_mnh = pd.concat([df_mnh, df_nan], axis=0)
+                         
+                     pass
           
                DF = pd.concat([DF, df_mnh], axis=1)
 
