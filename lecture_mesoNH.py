@@ -109,56 +109,64 @@ def mesoNH_user(start_day,end_day,id_user,params):
         if today_str not in data_user :
             data_user[today_str]={}
             try :
-                f = nc.Dataset('/home/manip/MeteopoleX/models/OUTPUT/MESONH/USER/'+today_str+'00/MESONH_Rt_'+today_str+'00_'+id_user+'.000.nc')
-                f2 = nc.Dataset('/home/manip/MeteopoleX/models/OUTPUT/MESONH/USER/'+today_str+'00/MESONH_Rt_'+today_str+'00_'+id_user+'.nc')
+                f = nc.Dataset('/home/manip/MeteopoleX/models/runs/OUTPUT/MESONH/USER/'+today_str+'00/MESONH_Rt_'+today_str+'00_'+id_user+'.000.nc')
+                f2 = nc.Dataset('/home/manip/MeteopoleX/models/runs/OUTPUT/MESONH/USER/'+today_str+'00/MESONH_Rt_'+today_str+'00_'+id_user+'.nc')
+
+                groupMEAN = '/LES_budgets/Mean/Cartesian/Not_time_averaged/Not_normalized/cart/'
+                groupSURF = '/LES_budgets/Surface/Cartesian/Not_time_averaged/Not_normalized/cart/'
+                groupRAD  = '/LES_budgets/Radiation/Cartesian/Not_time_averaged/Not_normalized/cart/'
+                    
                 if 'time' not in data_user[today_str] :
+                
                         data_user[today_str]['time'] = {}
-                        time_since_reseau=f['THT'][:,15].data
-                        time_reseau = datetime.datetime(f['THT'][0,0],f['THT'][0,1],f['THT'][0,2])
+                        
+                        time_since_reseau=f.variables['time_les'][:]
+                        
+                        hhmmss_reseau = datetime.time(0, 15, 0) 
+                        time_reseau=datetime.datetime.combine(date_run, hhmmss_reseau)
+
                         time = [time_reseau]
-                        swich=[]
+                        swich=[]   
+                        
+                        
                         for t in time_since_reseau :
                             if time[-1]==time_reseau+timedelta(hours=23,minutes=45):
                                 swich.append(1)
                             if len(swich)==0:
                                 time.append(time_reseau+timedelta(seconds=t))
                         data_user[today_str]['time']=time
+                        
                 for param in params:
+                
                     if param not in data_user[today_str]:
                         data_user[today_str][param] = {}
+                        
                         if param == "tmp_2m":
-                                    P = f['MEAN_PRE'][:, 2].data[:96]
-                                    D = (100000/P)**(2/7)  
-                                    data_mnh[today_str][model][param]= (f['MEAN_TH'][:, 2].data[:96] / D)-273.15
- 
-                                    print("------------------------------------------------ T2M = -------- ------------------- ",(f['MEAN_TH'][:, 2].data[:96] / D)-273.15)
+                            P = f[groupMEAN].variables['MEAN_PRE'][:, 2]
+                            D = (100000/P)**(2/7)  
+                            data_user[today_str][param]= (f[groupMEAN].variables['MEAN_TH'][:, 2] / D)-273.15
+
                         if param == "tmp_10m":
-                                    P = f['MEAN_PRE'][:, 5].data[:96]
-                                    D = (100000/P)**(2/7)  
-                                    data_mnh[today_str][model][param] = (f['MEAN_TH'][:, 5].data [:96]/ D)-273.15
+                            P = f[groupMEAN].variables['MEAN_PRE'][:, 5]
+                            D = (100000/P)**(2/7)  
+                            data_user[today_str][param] = (f[groupMEAN].variables['MEAN_TH'][:, 5]/ D)-273.15
+                            
                         if param == "hum_rel":                                    
-                                    data_mnh[today_str][model][param] = f['MEAN_REHU'][:,5].data[:96]
+                            data_user[today_str][param] = f[groupMEAN].variables['MEAN_REHU'][:,5]
+
                         if param == "vent_ff10m":
-                                    data_mnh[today_str][model][param]= f['MEANWIND'][:,5].data[:96]
+                            data_user[today_str][param]= f[groupMEAN].variables['MEANWIND'][:,5]
+                            
                         if param == "flx_mvt":
-                                    data_mnh[today_str][model][param] = f['MEAN_MF'][:,5].data[:96]
+                            data_user[today_str][param] = f[groupSURF].variables['Ustar'][:]
                         if param == "flx_chaleur_sens":
-                                    data_mnh[today_str][model][param] = f['Q0'][:].data[:96]*f['RHODREF'][2]*1004
+                            data_user[today_str][param] = f[groupSURF].variables['Q0'][:]*f.variables['RHODREF'][2]*1004
                         if param == "flx_chaleur_lat":
-                                    data_mnh[today_str][model][param] = f['E0'][:].data[:96]*f['RHODREF'][2]*2.501*10e3 #TODO facteur a corriger
+                            data_user[today_str][param] = f[groupSURF].variables['E0'][:]*f.variables['RHODREF'][2]*2400000 #TODO facteur a corriger
                         if param == "LWU":
-                                    data_mnh[today_str][model][param] = f['LWU'][:, 2].data[:96]
+                            data_user[today_str][param] = f[groupRAD].variables['LWU'][:, 2]
                         if param == "SWD":
-                                    data_mnh[today_str][model][param] = f['SWD'][:, 2].data[:96]
-#TODO paramètres inconnus dans les fichiers 00.000.nc
-#                                if param == "t_surface":
-#                                    f = nc.Dataset('/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/2021010400/MESONH_Gt_2021010400.nc')
-#                                    data_mnh[today_str][model][param] = f['TSRAD_NAT'][1,1].data[:96]
-#                                if param == "t-1":
-#                                    f = nc.Dataset('/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/2021010400/MESONH_Gt_2021010400.nc')
-#                                    data_mnh[today_str][model][param] = f['TG1P1'][1,1].data[:96]
-                        if param == "altitude_CL" :
-                                    data_mnh[today_str][model][param] = f2['HBLTOP'].data[:96]
+                            data_user[today_str][param] = f[groupRAD].variables['SWD'][:, 2]
                         
             except FileNotFoundError:
                 pass

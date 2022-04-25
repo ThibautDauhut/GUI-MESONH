@@ -55,7 +55,7 @@ class MesoNH:
     NB: Entre astérisques (*) les valeurs prises par défaut.
         
         
-    Sortie :
+    Sortie :/
         - None
         
     Exemple avec 3 simulations:
@@ -403,7 +403,9 @@ class MesoNH:
             now = datetime.now()
             if self.type_forcage == "OBS":
                 now = now - timedelta(days=2)
+                #now = now + timedelta(minutes=30)
             new_date = now.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
+            #new_date = now.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
             while(not os.path.exists(self.get_initialize_file(self.model_couplage, new_date))):
                 new_date = new_date - timedelta(days = 1)
             print('Date de run utilisée : ' + str(new_date))
@@ -664,6 +666,7 @@ class MesoNH:
         """
         
         ech_max = 96
+        #ech_max = 97
         txt = "&NAM_IDEAL_FLUX NFORCF=" + str(ech_max) + ",\n"
         
         doy1 = (self.date_run + timedelta(days=0)).strftime('%j')
@@ -680,10 +683,18 @@ class MesoNH:
         
         values, times, header = read_aida.donnees(doy1, doy2, year, "flx_hs_tson_Chb_%1800", "Tf")
     
+        for i, time in enumerate(times[:ech_max]):    
+        #for i, time in enumerate(times[0:ech_max-1]):
+        #for i, time in enumerate(times[1:ech_max]):
+            #print("i : ", i)
+            #print("time : ", time)
             
-        for i, time in enumerate(times[:ech_max]):
             time = float((time - self.date_run).days) * 86400 + float((time - self.date_run).seconds) - 1800
+            
+            #time = float((time - self.date_run).days) * 86400 + float((time - self.date_run).seconds) 
+            #print("time -1800 : ", time)
             txt += "XTIMEF(" + str(i+1) + ")=" + str(time) + ",\n"
+            #print(txt)
             
         for id_aida in dico_ids_aida:
             if id_aida == "CO2" :
@@ -708,7 +719,17 @@ class MesoNH:
                 values, times, header = read_aida.donnees(doy1, doy2, year, id_aida, "Tf")
                 
             for i, value in enumerate(values[:ech_max]):
-                txt += "X" + dico_ids_aida[id_aida] + "(" + str(i+1) + ")=" + str(value) + ",\n"
+            
+                #Attention, on applique le forçage 30 minutes avant la valeur réellement observée, car la simu commence à 00h et l'obs à 00h30
+                #On réajuste la valeur de i (i+2) et on prend la même valeur que pour i=3 pour les échéances i=1 (OOh) et i=2 (OOh15)
+                if i==0 :
+                
+                   txt += "X" + dico_ids_aida[id_aida] + "(" + str(1) + ")=" + str(values[0]) + ",\n"
+                   txt += "X" + dico_ids_aida[id_aida] + "(" + str(2) + ")=" + str(values[0]) + ",\n"
+                
+                else:
+                
+                   txt += "X" + dico_ids_aida[id_aida] + "(" + str(i+2) + ")=" + str(value) + ",\n"                
                 
         txt += "CSFTQ='W/m2',\n"
         txt += "CUSTARTYPE='USTAR'\n"
@@ -839,22 +860,22 @@ class MesoNH:
         
 def three_months():
 #DATE DE DEPART DU RUN
-    date_depart = datetime.fromisoformat('2022-02-01T00:00:00')
+    date_depart = datetime.fromisoformat('2021-10-25T00:00:00')
 
 #NOMBRE DE JOURS A PARTIR DE LA DATE DE DEPART ????
-    for i in range(15):
+    for i in range(68):
 
         date_run = date_depart + timedelta(days=i)
-#        for model in ['AROME', 'ARPEGE']:
-        for model in ['AROME']:
+        for model in ['AROME', 'ARPEGE']:
+        #for model in ['AROME']:
             try:
                 MesoNH(date_run=str(date_run), model_couplage=model)
             except:
                 print('Le modèle du ' + str(date_run) + ' ' + model + ' n\' a pas pu être lancé')
-        try:
-            MesoNH(date_run=str(date_run), type_forcage='OBS')
-        except:
-            print('Le modèle du ' + str(date_run) + ' OBS n\' a pas pu être lancé')
+        #try:
+            #MesoNH(date_run=str(date_run), type_forcage='OBS')
+        #except:
+            #print('Le modèle du ' + str(date_run) + ' OBS n\' a pas pu être lancé')
         
 """
     Sécurité/Améliorations à apporter:
