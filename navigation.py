@@ -280,7 +280,7 @@ def selection_donnees (start_day,end_day):
 
                     if model == "Tf":
                         id_aida = dico_params[param]["index_obs"] 
-                        (values, time, header)=read_aida.donnees(doy1,doy2,str(today.year),id_aida,model) #Read AIDA : lit tous les paramètres alors que selection de données va lire uniquement un parametre specifique
+                        (values, time, header)=read_aida.donnees(doy1,doy2,str(start_day.year),id_aida,model) #Read AIDA : lit tous les paramètres alors que selection de données va lire uniquement un parametre specifique
                         data[param][model]['values'] = values
                         data[param][model]['time'] = time 
 
@@ -289,7 +289,7 @@ def selection_donnees (start_day,end_day):
                     else:
 
                         id_aida = dico_params[param]["index_model"] + "_" + reseau 
-                        (values, time, header)=read_aida.donnees(doy1,doy2,str(today.year),id_aida,model)
+                        (values, time, header)=read_aida.donnees(doy1,doy2,str(start_day.year),id_aida,model)
                         data[param][model][reseau]['values'] = values
 
                         data[param][model][reseau]['time'] = time
@@ -852,7 +852,7 @@ def calcul_biais(start_day,end_day):
         for model in models:
 
             id_aida_obs = dico_params[param]["index_obs"] 
-            (values_obs, time_obs, header_obs)=read_aida.donnees(doy1,doy2,str(today.year),id_aida_obs,"Tf")
+            (values_obs, time_obs, header_obs)=read_aida.donnees(doy1,doy2,str(start_day.year),id_aida_obs,"Tf")
   
             if model not in biais[param]:
                 biais[param][model] = {}            
@@ -864,7 +864,7 @@ def calcul_biais(start_day,end_day):
                    biais[param][model][reseau] = {}
 
                 id_aida_mod = dico_params[param]["index_model"] + "_" + reseau 
-                (values_mod, time_mod, header_mod)=read_aida.donnees(doy1,doy2,str(today.year),id_aida_mod,model)
+                (values_mod, time_mod, header_mod)=read_aida.donnees(doy1,doy2,str(start_day.year),id_aida_mod,model)
 
                       
                 #Correction des données ARPEGE parfois datées à H-1:59 au lieu de H:00
@@ -946,7 +946,7 @@ def calcul_biais(start_day,end_day):
 
 
                id_aida_obs = dico_params[param]["index_obs"] 
-               (values_obs, time_obs, header_obs)=read_aida.donnees(day_1,day_2,str(today.year),id_aida_obs,"Tf") 
+               (values_obs, time_obs, header_obs)=read_aida.donnees(day_1,day_2,str(start_day.year),id_aida_obs,"Tf") 
 
 
 
@@ -1372,6 +1372,10 @@ biais_layout = html.Div([
 
 def biais_moyen(start_day,end_day):
 
+
+    print("START_DAY", str(start_day))
+    print("END_DAY", str(end_day))
+        
     #Initialisation du DataFrame final vide
     DF=[]
 
@@ -1407,54 +1411,54 @@ def biais_moyen(start_day,end_day):
                       pass
 
              
-               #Ajout des données MNH-OPER            
-               nb_jour = (end_day-start_day).days
+            #Ajout des données MNH-OPER            
+            nb_jour = (end_day-start_day).days
 
-               df_mnh=[]
-               df_mnh = pd.DataFrame(df_mnh)
+            df_mnh=[]
+            df_mnh = pd.DataFrame(df_mnh)
 
-               for i in range(nb_jour):
+            for i in range(nb_jour):
 
-                   day=start_day+timedelta(days=i)
-                   today_str=day.strftime('%Y%m%d')
-                  #if len(biais[param][model][str(today_str)]) > 1 :
+                day=start_day+timedelta(days=i)
+                today_str=day.strftime('%Y%m%d')
+               #if len(biais[param][model][str(today_str)]) > 1 :
                   
                   
-                   try: 
+                    
                
-                     df_loc = []
-                     colname = str(param+'_MesoNH_'+model)
-                     dummyarray = np.full(len(biais[param][model][str(today_str)]['time']), np.nan)
+                df_loc = []
+                colname = str(param+'_MesoNH_'+model)
+                     #dummyarray = np.full(len(biais[param][model][str(today_str)]['time']), np.nan)
                    
-                     df_nan = pd.DataFrame(data={colname:list(dummyarray)}, index=list(biais[param][model][str(today_str)]['time']))
+                     #df_nan = pd.DataFrame(data={colname:list(dummyarray)}, index=list(biais[param][model][str(today_str)]['time']))
                    
-                     print(biais.keys())
+                print(biais.keys())
                      #df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
                       
-                  
+                try:
                    
-                     print("ESSAI DE CREER DF BIAIS SUR LE JOUR : ", str(today_str))
-                     df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
-                     print("OK POUR CREATION DF BIAIS SUR LE JOUR : ", str(today_str))
+                  print("ESSAI DE CREER DF BIAIS SUR LE JOUR : ", str(today_str))
+                  df_loc = pd.DataFrame(df_loc, index=list(biais[param][model][str(today_str)]['time']))
+                  print("OK POUR CREATION DF BIAIS SUR LE JOUR : ", str(today_str))
                       
-                     data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
-                     print("NOM DE LA COLONNE : ", colname)
+                  data_loc={colname:list(biais[param][model][str(today_str)]['values'])} 
+                  print("NOM DE LA COLONNE : ", colname)
                       
                       
-                     df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
-                     print("CREATION DF LOCAL POUR LE JOUR : ", str(today_str))
+                  #df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time'])) 
+                  #print("CREATION DF LOCAL POUR LE JOUR : ", str(today_str))
              
-                     df_mnh = pd.concat([df_mnh, df_loc], axis=0)
+                  df_mnh = pd.concat([df_mnh, df_loc], axis=0)
                       
-                     print("OK POUR BIAIS MOY MNH")
+                  print("OK POUR BIAIS MOY MNH")
                
-                   except:
+                except:
                       
-                     #df_mnh = pd.concat([df_mnh, df_nan], axis=0)
+                  #df_mnh = pd.concat([df_mnh, df_nan], axis=0)
                          
-                     pass
+                  pass
           
-               DF = pd.concat([DF, df_mnh], axis=1)
+            DF = pd.concat([DF, df_mnh], axis=1)
 
 
 
