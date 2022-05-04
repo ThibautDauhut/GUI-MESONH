@@ -29,3 +29,6 @@ Outil de lancement de simulation utilisateur MésoNH-1D forcé par AROME et visu
 Paramètres utilisateurs possibles :
 - Période
 - Paramétrisation physique (turbulence, convection peu profonde, microphysique et rayonnement)
+
+Autopep8
+autopep8 -i -a --max-line-length 100 file.py
