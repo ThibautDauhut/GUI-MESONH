@@ -7,7 +7,6 @@ Created on Tue Feb  9 14:03:21 2021
 """
 
 
-import AIDA
 import os
 import sys
 
@@ -15,6 +14,7 @@ import sys
 AH = os.getenv('AIDA_HOME', '/home/common/aida')
 PYTHON_X_Y = "python%d.%d" % (sys.version_info[0], sys.version_info[1])
 sys.path.append(os.path.join(AH, 'lib', PYTHON_X_Y))
+import AIDA
 # definition acquid acquid=identifiant de la journee pou lecture donnée sous forme vecteur
 
 
