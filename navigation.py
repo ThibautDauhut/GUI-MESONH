@@ -513,9 +513,19 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
     for j, id_user in enumerate([id_user1, id_user2, id_user3, id_user4, id_user5]):
         data_user = lecture_mesoNH.mesoNH_user(start_day, end_day, id_user, params)
         nb_jour = (end_day - start_day).days
+        
+        courbe_affichee=[]
         for i in range(nb_jour + 1):
             date_run = start_day + datetime.timedelta(days=i)
             today_str = date_run.strftime('%Y%m%d')
+            
+            #if id_user1 not in courbe_affichee and ['tmp_2m'] in data_user[today_str]: 
+            #and isinstance(data_user[today_str]['tmp_2m'], (list, np.ndarray)):
+               # courbe_affichee.append(selection)
+                # afficher_legende = True
+            #else:
+                #afficher_legende = False
+                
             for param in params:
                 try:
                     if isinstance(data_user[today_str][param],
@@ -527,7 +537,7 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
                                 line=dict(
                                     color='black',
                                     dash=types[j]),
-                                name='MésoNH modifié (id : ' + str(id_user) + ' )'))
+                                name='MésoNH modifié (id : ' + str(id_user) + ' )',showlegend=False))
                         # print(data_user)
                 except KeyError:
                     pass
@@ -1049,7 +1059,7 @@ def calcul_biais(start_day, end_day):
 
             nb_jour = (end_day - start_day).days
 
-            for i in range(nb_jour + 1):
+            for i in range(nb_jour):
 
                 day = start_day + timedelta(days=i)
                 today_str = day.strftime('%Y%m%d')
@@ -1117,6 +1127,100 @@ def calcul_biais(start_day, end_day):
 
                         except KeyError:
                             pass
+                            
+                             
+        #for id_user in enumerate([id_user1, id_user2, id_user3, id_user4, id_user5]):
+                   
+       
+            
+        #data_user = lecture_mesoNH.mesoNH_user(start_day,end_day,id_user,params)  
+        #print("MODEL ID_USER :", id_user)                
+        #on utilise le 'id_user' en tant que nom du 'model' pour le dictionnaire
+        
+        """
+        for id_user in ["RM17", "LIMA"]:
+            
+           #print("MODEL ID_USER :", id_user) 
+           data_user = lecture_mesoNH.mesoNH_user(start_day,end_day,id_user,params) 
+        
+           if id_user not in biais[param]:
+              biais[param][id_user]={}
+
+                                   
+           nb_jour = (end_day-start_day).days
+            
+
+           for i in range(nb_jour):
+
+
+               day=start_day+timedelta(days=i)
+               today_str=day.strftime('%Y%m%d')
+
+               day_after=start_day+timedelta(days=i+1)
+               after_str=day_after.strftime('%Y%m%d')  
+                 
+               day_1 = datetime.datetime(int(day.year),int(day.month),int(day.day)).strftime('%j')  
+               day_2 = datetime.datetime(int(day_after.year),int(day_after.month),int(day_after.day)).strftime('%j')
+
+
+               id_aida_obs = dico_params[param]["index_obs"] 
+               (values_obs, time_obs, header_obs)=read_aida.donnees(day_1,day_2,str(start_day.year),id_aida_obs,"Tf") 
+
+
+
+               dt_mnh=mdates.num2date(mdates.drange(datetime.datetime(int(day.year),int(day.month),int(day.day)),datetime.datetime(int(day_after.year),int(day_after.month),int(day_after.day)),datetime.timedelta(minutes=30)))
+  
+               dataallyear_mnh = [i.replace(tzinfo=None) for i in dt_mnh]
+               dataframe_sanstrou_mnh = pd.DataFrame(index=dataallyear_mnh)   
+                   
+                   
+               if today_str not in biais[param][id_user]:
+                  biais[param][id_user][today_str] = {}       
+                   
+                                            
+               try:
+                   
+                  print("AVANT LECTURE du ", today_str, " de la simu ", id_user)
+                  values_user = data_user[today_str][param]
+                  print("APRES LECTURE")
+                  time_user   = data_user[today_str]['time']
+                   
+                  #print(values_user)   
+
+
+                  if len(values_user) != 0 :  
+                          
+                     #Création de dataframes des valeurs obs et modèles
+                     df_obs = pd.DataFrame(list(values_obs), index=(time_obs))
+                     df_user = pd.DataFrame(list(values_user[0:96]), index=(time_user))
+
+                     #concordance des dates sur le dataframe défini au début 
+                     df_obs= dataframe_sanstrou_mnh.join(df_obs)
+                     df_user= dataframe_sanstrou_mnh.join(df_user)
+
+                     #Calcul du biais
+                     df_biais_user = df_user - df_obs
+
+                     #df_biais = dataframe_sanstrou.join(df_biais)
+                     df_biais_user = df_biais_user.dropna()
+                     df_biais_user.index = pd.to_datetime(df_biais_user.index) 
+                           
+                     biais[param][id_user][today_str]['values']  = list(df_biais_user[0])
+                     biais[param][id_user][today_str]['time']    = list(df_biais_user.index) 
+                     
+                     print(biais[param][id_user][today_str]['values'])
+                             
+                  #print("CREATION DU DF TOTAL POUR ", id_user)
+                  #print(biais[param][id_user][today_str]['values'])
+                          
+               except:
+                  pass                          
+                         
+        """
+                           
+                            
+                            
+                            
 
         chartB[param] = go.Figure()
         # Tracé des figures
@@ -1261,8 +1365,11 @@ def update_lineB(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
     # UPDATE DES DATES APRES LE CALLBACK
 
     data_mnh = lecture_mesoNH.mesoNH(start_day, end_day, models, params)
+    
     data_surfex = lecture_surfex.surfex(start_day, end_day, models, params)
-
+    
+    #data_user = lecture_mesoNH.mesoNH_user(start_day,end_day,id_user,params) 
+    
     # CALCUL DES BIAIS correspondants à la période choisie
 
     biais, chartB, graphB = calcul_biais(start_day, end_day)
@@ -1280,20 +1387,25 @@ def update_lineB(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
     # tirets/alternance tirets-points)
     types = ['solid', 'dot', 'dash', 'longdash', 'dashdot']
     for j, id_user in enumerate([id_user1, id_user2, id_user3, id_user4, id_user5]):
-        data_user = lecture_mesoNH.mesoNH_user(start_day, end_day, id_user, params)
+        #data_user = lecture_mesoNH.mesoNH_user(start_day, end_day, id_user, params)
         nb_jour = (end_day - start_day).days
-        for i in range(nb_jour + 1):
+        
+        #Calcul du biais USER doit se faire ici normalement (après avoir défini le "id_user")
+        #biais, chartB, graphB = calcul_biais(start_day, end_day)
+
+        for i in range(nb_jour):
             date_run = start_day + datetime.timedelta(days=i)
             today_str = date_run.strftime('%Y%m%d')
             for param in params:
+                #print(biais[param][id_user][today_str])
                 try:
-                    if isinstance(data_user[today_str][param],
+                    if isinstance(biais[param][id_user][today_str],
                                   (list, np.ndarray)):  # On vérifie qu'il y a des données
 
                         chartB[param].add_trace(
                             go.Scatter(
-                                x=data_user[today_str]['time'],
-                                y=data_user[today_str][param],
+                                x=biais[param][id_user][today_str]['time'],
+                                y=biais[param][id_user][today_str]['values'],
                                 line=dict(
                                     color='black',
                                     dash=types[j]),
@@ -1408,6 +1520,17 @@ def update_lineB(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
 
                         chartB[param].add_trace(go.Scatter(x=biais[param][dico_model[selection]['name']][str(today_str)]['time'], y=biais[param][dico_model[selection]['name']][str(
                             today_str)]['values'], marker={"color": dico_model[selection]['color']}, mode="lines", name=selection, showlegend=afficher_legende))
+                   
+                    #Partie user "manuelle" en attendant de pouvoir la coder automatiquement  
+                    """       
+                    for id_user in ["RM17", "LIMA"]:
+                    
+                        if isinstance(biais[param][id_user]
+                                      [str(today_str)]['values'], (list, np.ndarray)):
+                                      
+                           chartB[param].add_trace(go.Scatter(x=biais[param][id_user][str(today_str)]['time'], y=biais[param][id_user][str(
+                            today_str)]['values'], marker={"color": "black"}, mode="lines", name=id_user, showlegend=True))
+                    """
 
                 except KeyError:
                     pass
