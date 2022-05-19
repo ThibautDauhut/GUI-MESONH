@@ -11,7 +11,7 @@ import numpy as np
 import dash
 #import dash_core_components as dcc
 from dash import dcc
-
+import dash_bootstrap_components as dbc
 #import dash_html_components as html
 from dash import html
 
@@ -83,7 +83,7 @@ import pandas as pd
 external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css']
 # C'est la css qui va permettre la mise en page
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True, title='MeteopoleX',
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True, title='MeteopoleX',
                 requests_pathname_prefix='/MeteopoleX/',
                 routes_pathname_prefix='/')
 app.css.config.serve_locally = True
@@ -99,10 +99,22 @@ server = app.server
 #    requests_pathname_prefix='/MeteopoleX/',
 #    routes_pathname_prefix='/')
 
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
-])
+SIDEBAR_STYLE = {
+    "position": "fixed",
+    "top": 0,
+    "left": 0,
+    "bottom": 0,
+    "width": "13rem",
+    "padding": "2rem 1rem",
+    "background-color": "#f8f9fa",
+}
+
+CONTENT_STYLE = {
+    "margin-left": "18rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+}
+
 
 today = datetime.date.today()
 # today=datetime.date.today()-timedelta(days=2)
@@ -440,11 +452,11 @@ multi_select_line_chart_SURFEX = dcc.Dropdown(
 )
 
 id_user = html.Div([
-    dcc.Input(id='id_user1', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user2', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user3', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user4', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user5', type='text', placeholder='id de la simulation à rajouter')])  # Attention : dcc.Input != Input (voir plus bas)
+    dcc.Input(id='id_user1', type='text', placeholder='Rejeu ID',style={'width':'50%'}),
+    dcc.Input(id='id_user2', type='text', placeholder='Rejeu ID',style={'width':'50%'}),
+    dcc.Input(id='id_user3', type='text', placeholder='Rejeu ID',style={'width':'50%'}),
+    dcc.Input(id='id_user4', type='text', placeholder='Rejeu ID',style={'width':'50%'}),
+    dcc.Input(id='id_user5', type='text', placeholder='Rejeu ID',style={'width':'50%'})])  # Attention : dcc.Input != Input (voir plus bas)
 # Les dcc.Input sont des carrés où l'utilisateur peut rentrer des info :
 # ici type = 'text' donc du texte,
 
@@ -683,7 +695,7 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
 # Mise à jour des graphiques après tous les changements
     list_charts = []
     for param in params:
-        chart[param].update_layout(height=500, width=1000,
+        chart[param].update_layout(height=450, width=800,
                                    xaxis_title="Date et heure",
                                    yaxis_title=str(dico_params[param]['unit']),
                                    title=dico_params[param]['title'])
@@ -716,30 +728,53 @@ row = html.Div(children=all_graphs, className="six columns")
 # puis on met toutes ces Div dans une seule qui elle prend toute la page
 # ("className="twelve columns")
 
+sidebar = html.Div(
+    [
+        html.H2("MétéopoleX", className="display-10"),
+        html.Hr(),
+        html.P(
+            "", className="lead"
+        ),
+        dbc.Nav(
+            [
+                dbc.NavLink("Séries quotidiennes", href="/MeteopoleX/"),
+                dbc.NavLink("Biais", href="/MeteopoleX/biais"),
+                dbc.NavLink("Biais moyens", href="/MeteopoleX/biaisM"),
+                dbc.NavLink("Profils verticaux", href="/MeteopoleX/rs"),
+                dbc.NavLink('Rejeu MésoNH', href="/MeteopoleX/mesoNH"),
+                dbc.NavLink('Rejeu SURFEX', href="/MeteopoleX/surfex"),
+                dbc.NavLink('Notice', href="/MeteopoleX/notice"),
+            ],
+            vertical=True,
+            pills=True,
+        ),
+        html.P(
+            "", className="lead"
+        ),
+        html.H2("Données", className="display-10"),
+        html.Hr(),
+        html.P(
+            "", className="lead"
+        ),
+        calendrier,
+        html.Div([multi_select_line_chart_obs, multi_select_line_chart_ARP, multi_select_line_chart_ARO,
+              multi_select_line_chart_MNH, multi_select_line_chart_SURFEX], className="six columns", style={"text-align": "center", "justifyContent": "center"}),
+    id_user
+    ],
+    style=SIDEBAR_STYLE,
+)
 
-menu = html.Div([
-    dcc.Link('Notice__', href='/MeteopoleX/notice'),
-    dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
-    dcc.Link('__Biais Moyens__', href='/MeteopoleX/biaisM'),
-    dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
-    dcc.Link('__Rejeu MésoNH__', href='/MeteopoleX/mesoNH'),
-    dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
-], className="twelve columns", style={"text-align": "right", "justifyContent": "center"})
-
-# le menu diffère de chaque page, il contient une liste de lien (dcc.Link)
-# dont les arguments sont le nom souhaité et son url
-
+content = html.Div(id="page-content", style=CONTENT_STYLE)
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    sidebar,content
+])
 
 obs_modeles_layout = html.Div([
-    html.H1('MeteopoleX'),
-    menu,
-    calendrier,
-    dcc.Dropdown(),
-    html.Div([multi_select_line_chart_obs, multi_select_line_chart_ARP, multi_select_line_chart_ARO,
-              multi_select_line_chart_MNH, multi_select_line_chart_SURFEX], className="six columns", style={"text-align": "center", "justifyContent": "center"}),
-    id_user,
-    #    row_left,
-    #    row_right,
+    html.H1('Séries quotidiennes'),
+    #calendrier,
+    #html.Div([multi_select_line_chart_obs, multi_select_line_chart_ARP, multi_select_line_chart_ARO,
+    #          multi_select_line_chart_MNH, multi_select_line_chart_SURFEX], className="six columns", style={"text-align": "center", "justifyContent": "center"}),
     row,
 ], className="row", style={"text-align": "center", "justifyContent": "center"})
 
@@ -751,15 +786,6 @@ obs_modeles_layout = html.Div([
 #   Notice
 #
 ###################
-
-menu = html.Div([
-    dcc.Link('Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
-    dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
-    dcc.Link('__Biais Moyens__', href='/MeteopoleX/biaisM'),
-    dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
-    dcc.Link('__Rejeu MésoNH', href='/MeteopoleX/mesoNH'),
-    dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
-], className="twelve columns", style={"text-align": "right", "justifyContent": "center"})
 
 test_png = 'fig1.png'
 test_base64 = base64.b64encode(open(test_png, 'rb').read()).decode('ascii')
@@ -920,7 +946,6 @@ content = html.Div([
 notice_layout = html.Div([
     html.Br(),
     html.H1('Précisions relatives aux abrévations et aux modèles utilisés'),
-    menu,
     html.Br(),
     html.Br(),
     html.Br(),
@@ -1239,82 +1264,6 @@ def calcul_biais(start_day, end_day):
 
 biais, chartB, graphB = calcul_biais(start_day, end_day)
 
-
-############### Widgets ###############
-
-calendrier = html.Div([
-    dcc.DatePickerRange(
-        id='my-date-picker-range',
-        first_day_of_week=1,
-        min_date_allowed=date(2015, 1, 1),
-        # Il faut mettre demain pour que la date max soit aujourd'hui
-        max_date_allowed=date(tomorow.year, tomorow.month, tomorow.day),
-        display_format="DD/MM/YYYY",
-        initial_visible_month=date(today.year, today.month, today.day),
-        start_date=yesterday,
-        end_date=today,
-        minimum_nights=0  # Durée minimum sélectionnable : si =0, durée min = 1 jour c-à-d start_date=end_date
-    ), html.Div(id='output-container-date-picker-range')])
-
-
-# multi_select_line_chartB_obs = dcc.Dropdown(
-#        id="multi_select_line_chartB_obs",
-#        options=[{"value":label, "label":label} for label in ["Obs"]],
-#        value=["Obs"], # Valeur qui s'affiche par défaut (si pas dans la liste des options alors rien n'est affiché)
-#        multi=True, # Possibilité d'en choisir plusieur
-#        clearable = False
-#    )
-# Le dcc.Dropdown est un objet dash qui permet l'affichage des options
-# sélectionnables quand on clique dessus, puis la sélection d'une ou
-# plusieurs options.
-
-
-multi_select_line_chartB_ARP = dcc.Dropdown(
-    id="multi_select_line_chartB_ARP",
-    options=[{"value": label, "label": label}
-             for label in ["Arp_J-1_00h", "Arp_J-1_12h", "Arp_J0_00h", "Arp_J0_12h", ]],
-    value=["Arp_J0_00h", "Arp_J-1_12h"],
-    multi=True,
-    clearable=False
-)
-
-multi_select_line_chartB_ARO = dcc.Dropdown(
-    id="multi_select_line_chartB_ARO",
-    options=[{"value": label, "label": label}
-             for label in ["Aro_J-1_00h", "Aro_J-1_12h", "Aro_J0_00h", "Aro_J0_12h"]],
-    value=["Aro_J0_00h", "Aro_J-1_12h"],
-    multi=True,
-    clearable=False
-)
-
-multi_select_line_chartB_MNH = dcc.Dropdown(
-    id="multi_select_line_chartB_MNH",
-    options=[{"value": label, "label": label}
-             for label in ["MésoNH_Arp", "MésoNH_Aro", "MésoNH_Obs"]],
-    value=["MésoNH_Arp", "MésoNH_Aro"],
-    multi=True,
-    clearable=False
-)
-
-multi_select_line_chartB_SURFEX = dcc.Dropdown(
-    id="multi_select_line_chartB_SURFEX",
-    options=[{"value": label, "label": label}
-             for label in ["SURFEX_Arp", "SURFEX_Aro", "SURFEX_Obs"]],
-    value=["SURFEX_Arp"],
-    multi=True,
-    clearable=False
-)
-
-id_user = html.Div([
-    dcc.Input(id='id_user1', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user2', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user3', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user4', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user5', type='text', placeholder='id de la simulation à rajouter')])  # Attention : dcc.Input != Input (voir plus bas)
-# Les dcc.Input sont des carrés où l'utilisateur peut rentrer des info :
-# ici type = 'text' donc du texte,
-
-
 ############### Callbacks ###############
 
 # Les callbacks ont obligatoirement besoin d'une liste d'Output et d'une liste d'Input pour fonctionner.
@@ -1336,10 +1285,10 @@ for param in params:
 
 @app.callback(output_graphsB,
               #               [Input('multi_select_line_chartB_obs', 'value'),
-              [Input('multi_select_line_chartB_ARP', 'value'),
-               Input('multi_select_line_chartB_ARO', 'value'),
-               Input('multi_select_line_chartB_MNH', 'value'),
-               Input('multi_select_line_chartB_SURFEX', 'value'),
+              [Input('multi_select_line_chart_ARP', 'value'),
+               Input('multi_select_line_chart_ARO', 'value'),
+               Input('multi_select_line_chart_MNH', 'value'),
+               Input('multi_select_line_chart_SURFEX', 'value'),
                Input('my-date-picker-range', 'start_date'),
                Input('my-date-picker-range', 'end_date'),
                Input(
@@ -1575,7 +1524,7 @@ def update_lineB(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
 
     for param in params:
 
-        chartB[param].update_layout(height=500, width=1000,
+        chartB[param].update_layout(height=450, width=800,
                                     xaxis_title="Date et heure",
                                     yaxis_title=str(dico_params[param]['unit']),
                                     title=dico_params[param]['title'])
@@ -1605,26 +1554,8 @@ row2 = html.Div(children=all_graphsB, className="twelve columns")
 # ("className="twelve columns")
 
 
-menu = html.Div([
-    dcc.Link('Notice__', href='/MeteopoleX/notice'),
-    dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
-    dcc.Link('__Biais Moyens__', href='/MeteopoleX/biaisM'),
-    dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
-    dcc.Link('__Rejeu MésoNH__', href='/MeteopoleX/mesoNH'),
-    dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
-], className="twelve columns", style={"text-align": "right", "justifyContent": "center"})
-
-# le menu diffère de chaque page, il contient une liste de lien (dcc.Link)
-# dont les arguments sont le nom souhaité et son url
-
-
 biais_layout = html.Div([
-    html.H1('Biais entre Observations Météopôle-Flux et Modèles'),
-    menu,
-    calendrier,
-    html.Div([multi_select_line_chartB_ARP, multi_select_line_chartB_ARO,
-              multi_select_line_chartB_MNH, multi_select_line_chartB_SURFEX], className="eight columns", style={"text-align": "center", "justifyContent": "center"}),
-    id_user,
+    html.H1('Biais'),
     row2,
 ], className="twelve columns", style={"text-align": "center", "justifyContent": "center"})
 
@@ -1803,82 +1734,6 @@ def biais_moyen(start_day, end_day):
 
 biais_moy, chartM, graphM = biais_moyen(start_day, end_day)
 
-
-############### Widgets ###############
-
-calendrier = html.Div([
-    dcc.DatePickerRange(
-        id='my-date-picker-range',
-        first_day_of_week=1,
-        min_date_allowed=date(2015, 1, 1),
-        # Il faut mettre demain pour que la date max soit aujourd'hui
-        max_date_allowed=date(tomorow.year, tomorow.month, tomorow.day),
-        display_format="DD/MM/YYYY",
-        initial_visible_month=date(today.year, today.month, today.day),
-        start_date=yesterday,
-        end_date=today,
-        minimum_nights=0  # Durée minimum sélectionnable : si =0, durée min = 1 jour c-à-d start_date=end_date
-    ), html.Div(id='output-container-date-picker-range')])
-
-
-# multi_select_line_chartB_obs = dcc.Dropdown(
-#        id="multi_select_line_chartB_obs",
-#        options=[{"value":label, "label":label} for label in ["Obs"]],
-#        value=["Obs"], # Valeur qui s'affiche par défaut (si pas dans la liste des options alors rien n'est affiché)
-#        multi=True, # Possibilité d'en choisir plusieur
-#        clearable = False
-#    )
-# Le dcc.Dropdown est un objet dash qui permet l'affichage des options
-# sélectionnables quand on clique dessus, puis la sélection d'une ou
-# plusieurs options.
-
-
-multi_select_line_chartM_ARP = dcc.Dropdown(
-    id="multi_select_line_chartM_ARP",
-    options=[{"value": label, "label": label}
-             for label in ["Arp_J-1_00h", "Arp_J-1_12h", "Arp_J0_00h", "Arp_J0_12h", ]],
-    value=["Arp_J0_00h", "Arp_J-1_12h"],
-    multi=True,
-    clearable=False
-)
-
-multi_select_line_chartM_ARO = dcc.Dropdown(
-    id="multi_select_line_chartM_ARO",
-    options=[{"value": label, "label": label}
-             for label in ["Aro_J-1_00h", "Aro_J-1_12h", "Aro_J0_00h", "Aro_J0_12h"]],
-    value=["Aro_J0_00h", "Aro_J-1_12h"],
-    multi=True,
-    clearable=False
-)
-
-multi_select_line_chartM_MNH = dcc.Dropdown(
-    id="multi_select_line_chartM_MNH",
-    options=[{"value": label, "label": label}
-             for label in ["MésoNH_Arp", "MésoNH_Aro", "MésoNH_Obs"]],
-    value=["MésoNH_Arp", "MésoNH_Aro"],
-    multi=True,
-    clearable=False
-)
-
-multi_select_line_chartM_SURFEX = dcc.Dropdown(
-    id="multi_select_line_chartM_SURFEX",
-    options=[{"value": label, "label": label}
-             for label in ["SURFEX_Arp", "SURFEX_Aro", "SURFEX_Obs"]],
-    value=["SURFEX_Arp"],
-    multi=True,
-    clearable=False
-)
-
-id_user = html.Div([
-    dcc.Input(id='id_user1', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user2', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user3', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user4', type='text', placeholder='id de la simulation à rajouter'),
-    dcc.Input(id='id_user5', type='text', placeholder='id de la simulation à rajouter')])  # Attention : dcc.Input != Input (voir plus bas)
-# Les dcc.Input sont des carrés où l'utilisateur peut rentrer des info :
-# ici type = 'text' donc du texte,
-
-
 ############### Callbacks ###############
 
 # Les callbacks ont obligatoirement besoin d'une liste d'Output et d'une liste d'Input pour fonctionner.
@@ -1900,10 +1755,10 @@ for param in params:
 
 @app.callback(output_graphsM,
               #               [Input('multi_select_line_chartB_obs', 'value'),
-              [Input('multi_select_line_chartM_ARP', 'value'),
-               Input('multi_select_line_chartM_ARO', 'value'),
-               Input('multi_select_line_chartM_MNH', 'value'),
-               Input('multi_select_line_chartM_SURFEX', 'value'),
+              [Input('multi_select_line_chart_ARP', 'value'),
+               Input('multi_select_line_chart_ARO', 'value'),
+               Input('multi_select_line_chart_MNH', 'value'),
+               Input('multi_select_line_chart_SURFEX', 'value'),
                Input('my-date-picker-range', 'start_date'),
                Input('my-date-picker-range', 'end_date'),
                Input(
@@ -2126,7 +1981,7 @@ def update_lineM(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
 
     for param in params:
 
-        chartM[param].update_layout(height=500, width=1000,
+        chartM[param].update_layout(height=450, width=800,
                                     xaxis_title="Heure de la journéee",
                                     yaxis_title=str(dico_params[param]['unit']),
                                     title=dico_params[param]['title'])
@@ -2156,43 +2011,20 @@ row3 = html.Div(children=all_graphsM, className="twelve columns")
 # ("className="twelve columns")
 
 
-menu = html.Div([
-    dcc.Link('Notice__', href='/MeteopoleX/notice'),
-    dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
-    dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
-    dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
-    dcc.Link('__Rejeu MésoNH__', href='/MeteopoleX/mesoNH'),
-    dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
-], className="twelve columns", style={"text-align": "right", "justifyContent": "center"})
-
-# le menu diffère de chaque page, il contient une liste de lien (dcc.Link)
-# dont les arguments sont le nom souhaité et son url
-
-
 biaisM_layout = html.Div([
-    html.H1('Biais Moyens'),
-    menu,
-    calendrier,
-    html.Div([multi_select_line_chartM_ARP, multi_select_line_chartM_ARO,
-              multi_select_line_chartM_MNH, multi_select_line_chartM_SURFEX], className="eight columns", style={"text-align": "center", "justifyContent": "center"}),
-    #    html.Div([multi_select_line_chartB_ARP,multi_select_line_chartB_ARO,
-    # multi_select_line_chartB_MNH,multi_select_line_chartB_SURFEX],className="eight
-    # columns",style={"text-align": "center", "justifyContent":"center"}),
-    id_user,
+    html.H1('Biais moyens'),
     row3,
 ], className="twelve columns", style={"text-align": "center", "justifyContent": "center"})
 
-
 ########################
 #
-#   Sondages
+#   PROFILS VERTICAUX
 #
 ########################
 
 ############### Données ###############
 
 params_rs = ["Température", "Humidité relative", "Vent"]
-# Les 3 paramètres que nous allons tracer
 
 options_params_rs = {"Température":
                      {"label": "Température",
@@ -2310,19 +2142,11 @@ calendrier = html.Div([
         initial_visible_month=date(yesterday.year, yesterday.month, yesterday.day),
     ), html.Div(id='output-container-date-picker-single')], className="twelve columns", style={"text-align": "center", "justifyContent": "center"})
 
-
-colors = []
-for heure in heures:
-    colors.append(heures[heure]["color"])
 wich_heure = html.Div([
-    dcc.Checklist(
+dcc.Checklist(
         options=[{'label': x, 'value': x} for x in heures],
         value=["6h"],
-        id='wich_heure',
-        labelStyle={'display': 'inline-block',
-                    'color': colors},
-    )], className="five columns", style={"text-align": "left", "justifyContent": "center"})
-# C'est le widget qui permet de cocher l'heure voulue
+        id='wich_heure')])
 
 
 labels = []
@@ -2332,65 +2156,13 @@ multi_select_line_chart_model = html.Div([
     dcc.Dropdown(
         id="multi_select_line_chart_model",
         options=[{"value": value, "label": label} for value, label in zip(options_models, labels)],
-        value="MésoNH forcé par Arome",
+        value=["Ab"],
         multi=True,
-        clearable=False
-    )], className="six columns", style={"text-align": "right", "justifyContent": "center"})
+        clearable=False,
+        style={'width':'100%'}
+    )], className="six columns", style={"text-align": "center", "justifyContent": "center"})
 # C'est le widget qui permet de sélectionner les courbes que l'on veut afficher
 
-
-# multi_select_line_chart_obs = dcc.Dropdown(
-#        id="multi_select_line_chartB_obs",
-#        options=[{"value":label, "label":label} for label in ["Obs"]],
-#        value=["Obs"], # Valeur qui s'affiche par défaut (si pas dans la liste des options alors rien n'est affiché)
-#        multi=True, # Possibilité d'en choisir plusieur
-#        clearable = False
-#    )
-# Le dcc.Dropdown est un objet dash qui permet l'affichage des options
-# sélectionnables quand on clique dessus, puis la sélection d'une ou
-# plusieurs options.
-
-
-# multi_select_line_chart_ARP = dcc.Dropdown(
-#        id="multi_select_line_chartB_ARP",
-#        options=[{"value":label, "label":label} for label in ["Arp_J0_00h",]],
-#        value=["Arp_J0_00h"],
-#        multi=True,
-#        clearable = False
-#    )
-
-# multi_select_line_chart_ARO = dcc.Dropdown(
-#        id="multi_select_line_chartB_ARO",
-#        options=[{"value":label, "label":label} for label in ["Aro_J0_00h"]],
-#        value=["Aro_J0_00h"],
-#        multi=True,
-#        clearable = False
-#    )
-
-# multi_select_line_chart_MNH = dcc.Dropdown(
-#        id="multi_select_line_chartB_MNH",
-#        options=[{"value":label, "label":label} for label in ["MésoNH_Arp","MésoNH_Aro","MésoNH_Obs"]],
-#        value=["MésoNH_Arp","MésoNH_Aro"],
-#        multi=True,
-#        clearable = False
-#    )
-
-# multi_select_line_chartB_SURFEX = dcc.Dropdown(
-#        id="multi_select_line_chartB_SURFEX",
-#        options=[{"value":label, "label":label} for label in ["SURFEX_Arp","SURFEX_Aro","SURFEX_Obs"]],
-#        value=["SURFEX_Arp"],
-#        multi=True,
-#        clearable = False
-#    )
-
-# id_user = html.Div([
-#        dcc.Input(id = 'id_user1',type = 'text',placeholder = 'id de la simulation à rajouter'),
-#        dcc.Input(id = 'id_user2',type = 'text',placeholder = 'id de la simulation à rajouter'),
-#        dcc.Input(id = 'id_user3',type = 'text',placeholder = 'id de la simulation à rajouter'),
-#        dcc.Input(id = 'id_user4',type = 'text',placeholder = 'id de la simulation à rajouter'),
-#        dcc.Input(id = 'id_user5',type = 'text',placeholder = 'id de la simulation à rajouter')]) # Attention : dcc.Input != Input (voir plus bas)
-# Les dcc.Input sont des carrés où l'utilisateur peut rentrer des info :
-# ici type = 'text' donc du texte,
 
 
 # Premier chargement des données à la date d'aujourd'hui
@@ -2420,16 +2192,7 @@ for param in params_rs:
 @app.callback(output_rs, [Input('wich_heure', 'value'),
                           Input('my-date-picker-single', 'date'),
                           Input('multi_select_line_chart_model', 'value')])
-# @app.callback(output_rs,
-#               [Input('multi_select_line_chart_obs', 'value'),
-#                [Input('multi_select_line_chart_ARP', 'value'),
-#                Input('multi_select_line_chart_ARO', 'value'),
-#                Input('multi_select_line_chart_MNH', 'value'),
-#                Input('multi_select_line_chart_SURFEX', 'value'),
-#                Input('my-date-picker-range', 'start_date'),
-#                Input('my-date-picker-range', 'end_date'),
-#                Input('id_user1','value'),Input('id_user2','value'),Input('id_user3','value'),Input('id_user4','value'),Input('id_user5','value')
-#                ])
+
 def update_rs(wich_heure, date_value, model_choisi):
 
     if date_value is not None:
@@ -2494,7 +2257,7 @@ def update_rs(wich_heure, date_value, model_choisi):
                         pass
     list_charts = []
     for param in params_rs:
-        chart[param].update_layout(height=1300, width=600,
+        chart[param].update_layout(height=1000, width=500,
                                    xaxis_title=options_params_rs[param]["label"] +
                                    " (" + options_params_rs[param]["unit"] + ")",
                                    yaxis_title="Altitude (m agl)",
@@ -2508,26 +2271,6 @@ def update_rs(wich_heure, date_value, model_choisi):
 
 ############### Layout ###############
 
-legende = []
-for heure in heures:
-    legende.append(
-        html.Div(
-            dcc.Textarea(
-                value=heures[heure]['value'],
-                style={
-                    'color': heures[heure]['color'],
-                    'width': 50,
-                    'height': 25}),
-            className="one columns",
-            style={
-                "text-align": "left",
-                "justifyContent": "center"}))
-# Ces 4 lignes permettent de créer à la chaine les zones de texte pour
-# montrer à l'utilisateur le code couleur choisi
-
-row1 = html.Div(children=legende, className="six columns")
-
-
 all_graphs = []
 for param in params_rs:
     all_graphs.append(
@@ -2540,34 +2283,14 @@ for param in params_rs:
 row2 = html.Div(children=all_graphs, className="six columns")
 
 
-menu = html.Div([
-    dcc.Link('Notice__', href='/MeteopoleX/notice'),
-    dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
-    dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
-    dcc.Link('__Biais Moyens__', href='/MeteopoleX/biaisM'),
-    dcc.Link('__Rejeu MésoNH__', href='/MeteopoleX/mesoNH'),
-    dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
-], className="twelve columns", style={"text-align": "right", "justifyContent": "center"})
-
-
 rs_layout = html.Div([
-    html.H1('Sondages'),
-    menu,
+    html.H1('Profils verticaux'),
     calendrier,
-    html.Br(),
     html.Br(),
     html.Br(),
     wich_heure,
     multi_select_line_chart_model,
-    html.Div(
-        dcc.Textarea(
-            value="Code couleur :", style={
-                'color': "black"}), className="two columns", style={
-            "text-align": "left", "justifyContent": "center"}),
-    #    html.Div([multi_select_line_chart_ARP,multi_select_line_chart_ARO,
-    #    multi_select_line_chart_MNH,multi_select_line_chart_SURFEX],className="eight columns",style={"text-align": "center", "justifyContent":"center"}),
-    #    id_user,
-    row1, row2,
+    row2,
     html.Br(),
 ], className="twelve columns", style={"text-align": "center", "justifyContent": "center"})
 
@@ -2615,7 +2338,6 @@ all_params_id = []
 all_params_html = []
 inputs = []
 for var in dico_vars_mesonh:
-
     title = html.Div(
         dico_vars_mesonh[var]["name"] + ' :',
         className="four columns",
@@ -2683,18 +2405,8 @@ def loader_func(n_clicks, start_date, end_date, *arg):
 
 row1 = html.Div(children=all_params_html, className="twelve columns")
 
-menu = html.Div([
-    dcc.Link('Notice__', href='/MeteopoleX/notice'),
-    dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
-    dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
-    dcc.Link('__Biais Moyens__', href='/MeteopoleX/biaisM'),
-    dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
-    dcc.Link('__Rejeu SURFEX', href='/MeteopoleX/surfex')
-], className="twelve columns", style={"text-align": "right", "justifyContent": "center"})
-
 mesoNH_layout = html.Div([
-    html.H1('Rejeu de MésoNH'),
-    menu,
+    html.H1('Rejeu MésoNH'),
     html.Br(),
     calendrier,
     html.Br(),
@@ -2703,7 +2415,7 @@ mesoNH_layout = html.Div([
     html.Br(),
     html.Div(
         html.Button(
-            'Lancer la simulation MésoNH',
+            'Lancer la simulation',
             id='button'),
         style={
             "margin-top": "100px"}),
@@ -2727,18 +2439,8 @@ mesoNH_layout = html.Div([
 #
 ########################
 
-menu = html.Div([
-    dcc.Link('Notice__', href='/MeteopoleX/notice'),
-    dcc.Link('__Comparaisons Obs MétéoFlux/Modèles__', href='/MeteopoleX/'),
-    dcc.Link('__Biais Obs/Modèles__', href='/MeteopoleX/biais'),
-    dcc.Link('__Biais Moyens__', href='/MeteopoleX/biaisM'),
-    dcc.Link('__Sondages__', href='/MeteopoleX/rs'),
-    dcc.Link('__Rejeu MésoNH', href='/MeteopoleX/mesoNH'),
-], className="twelve columns", style={"text-align": "right", "justifyContent": "center"})
-
 surfex_layout = html.Div([
     html.H1('Rejeu de SURFEX'),
-    menu
 ], className="twelve columns", style={"text-align": "center", "justifyContent": "center"})
 
 
