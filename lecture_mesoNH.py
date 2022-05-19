@@ -46,6 +46,7 @@ def mesoNH(start_day, end_day, models, params):
                         '00.nc')
 
                     groupMEAN = '/LES_budgets/Mean/Cartesian/Not_time_averaged/Not_normalized/cart/'
+                    groupSBG  = '/LES_budgets/Subgrid/Cartesian/Not_time_averaged/Not_normalized/cart/'
                     groupSURF = '/LES_budgets/Surface/Cartesian/Not_time_averaged/Not_normalized/cart/'
                     groupRAD  = '/LES_budgets/Radiation/Cartesian/Not_time_averaged/Not_normalized/cart/'
 
@@ -100,6 +101,8 @@ def mesoNH(start_day, end_day, models, params):
                                     data_mnh[today_str][model][param] = f[groupRAD].variables['LWU'][:, 2]
                                 if param == "SWD":
                                     data_mnh[today_str][model][param] = f[groupRAD].variables['SWD'][:, 2]
+                                if param == "tke":
+                                    data_mnh[today_str][model][param] = f[groupSBG].variables['SBG_TKE'][:, 2]
 # TODO paramètres inconnus dans les fichiers 00.000.nc
 #                                if param == "t_surface":
 #                                    f = nc.Dataset('/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/2021010400/MESONH_Gt_2021010400.nc')
@@ -143,6 +146,7 @@ def mesoNH_user(start_day, end_day, id_user, params):
                     '.nc')
 
                 groupMEAN = '/LES_budgets/Mean/Cartesian/Not_time_averaged/Not_normalized/cart/'
+                groupSBG  = '/LES_budgets/Subgrid/Cartesian/Not_time_averaged/Not_normalized/cart/'
                 groupSURF = '/LES_budgets/Surface/Cartesian/Not_time_averaged/Not_normalized/cart/'
                 groupRAD = '/LES_budgets/Radiation/Cartesian/Not_time_averaged/Not_normalized/cart/'
 
@@ -200,6 +204,8 @@ def mesoNH_user(start_day, end_day, id_user, params):
                             data_user[today_str][param] = f[groupRAD].variables['LWU'][:, 1]
                         if param == "SWD":
                             data_user[today_str][param] = f[groupRAD].variables['SWD'][:, 1]
+                        if param == "tke":
+                            data_user[today_str][model][param] = f[groupSBG].variables['SBG_TKE'][:, 2]
             except FileNotFoundError:
                 pass
             except TypeError:

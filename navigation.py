@@ -178,6 +178,13 @@ dico_params = {
         "title": "Flux de chaleur latente",
         "unit": "W/m²"
     },
+    "tke": {
+        "index_obs": "trb_ect_gill_tke_%1800",
+        "index_model": "",
+        "title": "Energie cinétique turbulente",
+        "unit": "m²/s²"
+        },
+
     "SWD": {
         "index_obs": "ray_rgd_cnr1_c2_%60_Met_%1800",
         "index_model": "ray_rgd",
@@ -255,6 +262,7 @@ params = [
     "flx_mvt",
     "flx_chaleur_sens",
     "flx_chaleur_lat",
+    "tke",
     "SWD",
     "LWU",
     "t_surface",
