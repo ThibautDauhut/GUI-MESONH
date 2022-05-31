@@ -1,7 +1,7 @@
 from dash import Dash, html, dcc, Input, Output, State, callback_context
 import dash_bootstrap_components as dbc
 import plotly.express as px
-
+import styles as sty
 from read_tex import KEYdoc
 
 def create_Cgrp(options, idname, defaultvalue):
@@ -39,7 +39,7 @@ def create_subDiv(DNamelist,icat):
         if DNamelist['keys'][k]['cat'] == icat:
             contentdiv.append(html.Label(k, id=k+'labdoc'))
             contentdiv.append(html.Br())
-    return html.Div(children=contentdiv,style=STYLE_KEYS)
+    return html.Div(children=contentdiv,style=sty.STYLE_KEYS)
     
 def create_subDivvalues(DNamelist,icat):
 # Function that creates the sub Div values for the 'cat' number icat of DNamelist
@@ -57,66 +57,6 @@ def create_subDivvalues(DNamelist,icat):
             	pass
     contentdiv.append(html.Hr()) # Last ligne is a full line
     return html.Div(children=contentdiv)
-
-# the style arguments for the sidebar.
-SIDEBAR_STYLE = {
-    'position': 'fixed',
-    'top': 0,
-    'left': 0,
-    'bottom': 0,
-    'width': '15%',
-    'padding': '20px 10px',
-    'background-color': '#f8f9fa',
-    'border': '0px solid black'
-}
-
-DOC_STYLE = {
-    'width': '45%',
-    'padding': '20px 10px',
-    'background-color': '#f8f9fa',
-    'border': '0px solid black'
-}
-
-# the style arguments for the main content page.
-CONTENT_STYLE = {
-    'margin-left': '21%',
-    'margin-right': '5%',
-    'padding': '20px 10p',
-    'display': 'flex',
-    'flex-direction': 'row',
-    'justify-content': 'right'
-}
-
-TEXT_STYLE = {
-    'textAlign': 'center',
-    'color': '#191970',
-}
-
-STYLE1={
-	'display': 'flex',
-    	'flex-direction': 'row',	 
-	'vertical-align': 'top', 
-	'margin-left': '10%',
-	'border': '0px solid black'
-}
-STYLE_NAMELIST={
-	'width' : '100%',	 
-	'vertical-align': 'top', 
-	'margin-left': '0%',
-	'border': '0px solid pink'
-}	
-STYLE_COL_NAMELISTS={
-	'width' : '40%',	 
-	'margin-left': '13%',
-	'border': '0px solid pink'
-}
-
-STYLE_KEYS={
-	'width' : '20%',	 
-	'vertical-align': 'top', 
-	'margin-left': '0%',
-	'border': '0px solid green'
-}	
 
 # Listes des boutons afficher/cacher
 ButtonNamelists=['NAMTURB','NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag','NAMPARAM']
@@ -206,25 +146,25 @@ DivDiagNAMTURBvalues = create_subDivvalues(Options['TURBn'],2)
 #Div
 col_turbn = html.Div(children=[
 	dbc.Collapse([
-		html.H5('&NAM_TURBn',style=TEXT_STYLE),
-		html.H6('General',style=TEXT_STYLE,id='NAMTURBgeneral-button'),
+		html.H5('&NAM_TURBn',style=sty.TEXT_STYLE),
+		html.H6('General',style=sty.TEXT_STYLE,id='NAMTURBgeneral-button'),
 		dbc.Collapse(
-            		html.Div([DivGeneralNAMTURB,DivGeneralNAMTURBvalues],style=STYLE1),
+            		html.Div([DivGeneralNAMTURB,DivGeneralNAMTURBvalues],style=sty.STYLE1),
             		id="NAMTURBgeneral",
             		is_open=True,
         		),
-		html.H6('Subgrid condensation',style=TEXT_STYLE,id='NAMTURBsbg-button'),
+		html.H6('Subgrid condensation',style=sty.TEXT_STYLE,id='NAMTURBsbg-button'),
 		dbc.Collapse(
-            		html.Div([DivSBGNAMTURB,DivSBGNAMTURBvalues],style=STYLE1),
+            		html.Div([DivSBGNAMTURB,DivSBGNAMTURBvalues],style=sty.STYLE1),
             		id="NAMTURBsbg",
             		is_open=True,
         		),
-        	html.H6('Online diagnostics',style=TEXT_STYLE,id='NAMTURBdiag-button'),
+        	html.H6('Online diagnostics',style=sty.TEXT_STYLE,id='NAMTURBdiag-button'),
 		dbc.Collapse(
-            		html.Div([DivDiagNAMTURB,DivDiagNAMTURBvalues],style=STYLE1),
+            		html.Div([DivDiagNAMTURB,DivDiagNAMTURBvalues],style=sty.STYLE1),
             		id="NAMTURBdiag",
             		is_open=True,
-        		)],id="NAMTURB",is_open=True)],style=STYLE_NAMELIST)
+        		)],id="NAMTURB",is_open=True)],style=sty.STYLE_NAMELIST)
 
 #PARAMn
 DivGeneralNAMPARAM = create_subDiv(Options['PARAMn'],0)
@@ -234,34 +174,34 @@ DivGeneralNAMPARAMvalues = create_subDivvalues(Options['PARAMn'],0)
 
 #3 Automatiser le Div final (peut être + difficile)           
 col_paramn = html.Div(children=[dbc.Collapse([
-		html.H5('&NAM_PARAMn',style=TEXT_STYLE),
+		html.H5('&NAM_PARAMn',style=sty.TEXT_STYLE),
 		dbc.Collapse(
-            		html.Div([DivGeneralNAMPARAM,DivGeneralNAMPARAMvalues],style=STYLE1),
+            		html.Div([DivGeneralNAMPARAM,DivGeneralNAMPARAMvalues],style=sty.STYLE1),
             		id="NAMPARAMgeneral",
             		is_open=True,
-        		)],id="NAMPARAM",is_open=True)],style=STYLE_NAMELIST)
+        		)],id="NAMPARAM",is_open=True)],style=sty.STYLE_NAMELIST)
 
-col_allNamelists = html.Div(children=[col_turbn,col_paramn],style=STYLE_COL_NAMELISTS)
-col_doc =  html.Div(id='container-userguide',style=DOC_STYLE)
+col_allNamelists = html.Div(children=[col_turbn,col_paramn],style=sty.STYLE_COL_NAMELISTS)
+col_doc =  html.Div(id='container-userguide',style=sty.DOC_STYLE)
 
 sidebar = html.Div([
-        html.H2('Namelist groups', style=TEXT_STYLE),
+        html.H2('Namelist groups', style=sty.TEXT_STYLE),
         html.Hr(),
-        html.H4('&NAM_PARAMn',style=TEXT_STYLE, id='NAMPARAM-button'),
-        html.H4('&NAM_TURBn',style=TEXT_STYLE, id='NAMTURB-button'),
-    ],style=SIDEBAR_STYLE)
+        html.H4('&NAM_PARAMn',style=sty.TEXT_STYLE, id='NAMPARAM-button'),
+        html.H4('&NAM_TURBn',style=sty.TEXT_STYLE, id='NAMTURB-button'),
+    ],style=sty.SIDEBAR_STYLE)
     
 LineTopStatic = html.Div([
     html.Div(children=[
-    html.H4('Keys',style=TEXT_STYLE),
+    html.H4('Keys',style=sty.TEXT_STYLE),
     ], style={'padding': 10, 'flex': 1}),
     html.Div(children=[html.Br()
     ], style={'padding': 10, 'flex': 2}),
     html.Div(children=[
-        html.H4('User\'s guide',style=TEXT_STYLE),
+        html.H4('User\'s guide',style=sty.TEXT_STYLE),
     ], style={'padding': 10, 'flex': 3})
     ],
-    style=CONTENT_STYLE)
+    style=sty.CONTENT_STYLE)
 
 generalContent = html.Div(children=[col_allNamelists,col_doc],className='row')
 supercontent = html.Div(children=[LineTopStatic,generalContent], style={'width':'100%'})
