@@ -103,6 +103,7 @@ def mesoNH(start_day, end_day, models, params):
                                     data_mnh[today_str][model][param] = (f[groupRAD].variables['SWD'][:, 1]+f[groupRAD].variables['SWD'][:, 2])/2
                                 if param == "tke":
                                     data_mnh[today_str][model][param] = (f[groupSBG].variables['SBG_TKE'][:, 1]+f[groupSBG].variables['SBG_TKE'][:, 2])/2
+
 # TODO paramètres inconnus dans les fichiers 00.000.nc
 #                                if param == "t_surface":
 #                                    f = nc.Dataset('/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/2021010400/MESONH_Gt_2021010400.nc')
@@ -206,6 +207,7 @@ def mesoNH_user(start_day, end_day, id_user, params):
                             data_user[today_str][param] = (f[groupRAD].variables['SWD'][:, 1]+f[groupRAD].variables['SWD'][:, 2])/2
                         if param == "tke":
                             data_user[today_str][param] = (f[groupSBG].variables['SBG_TKE'][:, 1]+f[groupSBG].variables['SBG_TKE'][:, 2])/2
+
             except FileNotFoundError:
                 pass
             except TypeError:

@@ -1174,7 +1174,9 @@ def calcul_biais(start_day, end_day):
         #on utilise le 'id_user' en tant que nom du 'model' pour le dictionnaire
         
         """
+
         for id_user in ["RM17", "LIMASB"]:
+
             
            #print("MODEL ID_USER :", id_user) 
            data_user = lecture_mesoNH.mesoNH_user(start_day,end_day,id_user,params) 
@@ -1251,9 +1253,9 @@ def calcul_biais(start_day, end_day):
                           
                except:
                   pass                          
-                         
         
       """                     
+
                             
                             
                             
