@@ -58,14 +58,38 @@ def create_subDivvalues(DNamelist,icat):
     contentdiv.append(html.Hr()) # Last ligne is a full line
     return html.Div(children=contentdiv)
 
-# Listes des boutons afficher/cacher
-ButtonNamelists=['NAMTURB','NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag','NAMPARAM']
-# Listes des labels documentés
+def create_KeyValuesDiv(DNamelist):
+# Function that creates the main Div keys + values
+
+    # Creates first keys divs and values divs à la volée and save it to Options dict
+    for n,div in enumerate(DNamelist['divName']):
+        print(div)
+        DNamelist['divskeys'][div] = create_subDiv(DNamelist, n)
+        DNamelist['divsvalues'][div] = create_subDivvalues(DNamelist, n)
+
+    # Loop on each key-values divs pairs
+    contentdiv=[html.H5('&'+DNamelist['name'].replace('\_','_'),style=sty.TEXT_STYLE),]
+    for n,div in enumerate(DNamelist['divName']):
+        contentdiv.append(html.H6(DNamelist['catName'][n],style=sty.TEXT_STYLE,id=DNamelist['buttonName'][n+1]+'-button'))
+        contentdiv.append(dbc.Collapse(
+        			html.Div([DNamelist['divskeys'][div],DNamelist['divsvalues'][div]],style=sty.STYLE1),
+        			id=div,
+        			is_open=True))
+    collapse_general = dbc.Collapse(contentdiv, id=DNamelist['buttonName'][0], is_open=True)
+    return html.Div(children=collapse_general, style=sty.STYLE_NAMELIST)
+
+
 Options = {
+#            - 'divskeys':{}, 'divsvalues':{} doivent être des dics nuls (sont remplis par la suite)
+#            - len(catName) must be == len(divName). empty name for catName is possible
+#            - 'name' is the latex user's guide convention with \_
+#            - len(buttonName) must be == len(divName) + 1 (with the first button = the general id button name for the sidebar
+#            - empty name for buttonName is possible
 'TURBn': {'name': 'NAM\_TURBn',
         'catName': ['Général','Subgrid condensation','Online diagnostics'],
         'buttonName': ['NAMTURB','NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
-        'divName': ['NAMTURBgeneral','NAMTURBsbg'],
+        'divName': ['NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
+        'divskeys':{}, 'divsvalues':{}, 'mainDiv':{},
         'keys':{
                 'XIMPL':{'type':'Input','min': 0, 'max': 1, 'cat': 0, 'def': 1},
                 'CTURBLEN':{'type':'C', 'def':'BL89', 'cat': 0,
@@ -104,7 +128,11 @@ Options = {
                 'LTURB_DIAG':{'type':'L', 'def': 'False', 'cat': 2},
                 }
         },
-'PARAMn': {'name': 'NAM\_PARAMn','catName': [],'buttonName': ['NAMPARAM'],'divName': [],
+'PARAMn': {'name': 'NAM\_PARAMn',
+	   'catName': [''],
+	   'buttonName': ['NAMPARAM',''],
+	   'divName': ['NAMPARAMgeneral'],
+           'divskeys':{}, 'divsvalues':{}, 'mainDiv':{},
         'keys':{
                 'CTURB':{'type':'C', 'def':'TKEL', 'cat': 0,
                             'options': [{"label": "NONE", "value": "NONE"},
@@ -135,62 +163,30 @@ Options = {
         }
 }
 
-# TURBn Divs
-DivGeneralNAMTURB = create_subDiv(Options['TURBn'],0)
-DivSBGNAMTURB =  create_subDiv(Options['TURBn'],1)
-DivDiagNAMTURB = create_subDiv(Options['TURBn'],2)
+# Create key-values namelist divs list
+all_namelistdivs=[]
+for opt in Options.keys():
+	Options[opt]['mainDiv'] = create_KeyValuesDiv(Options[opt])
+	all_namelistdivs.append(Options[opt]['mainDiv'])
 
-DivGeneralNAMTURBvalues = create_subDivvalues(Options['TURBn'],0)
-DivSBGNAMTURBvalues = create_subDivvalues(Options['TURBn'],1)
-DivDiagNAMTURBvalues = create_subDivvalues(Options['TURBn'],2)
-#Div
-col_turbn = html.Div(children=[
-	dbc.Collapse([
-		html.H5('&NAM_TURBn',style=sty.TEXT_STYLE),
-		html.H6('General',style=sty.TEXT_STYLE,id='NAMTURBgeneral-button'),
-		dbc.Collapse(
-            		html.Div([DivGeneralNAMTURB,DivGeneralNAMTURBvalues],style=sty.STYLE1),
-            		id="NAMTURBgeneral",
-            		is_open=True,
-        		),
-		html.H6('Subgrid condensation',style=sty.TEXT_STYLE,id='NAMTURBsbg-button'),
-		dbc.Collapse(
-            		html.Div([DivSBGNAMTURB,DivSBGNAMTURBvalues],style=sty.STYLE1),
-            		id="NAMTURBsbg",
-            		is_open=True,
-        		),
-        	html.H6('Online diagnostics',style=sty.TEXT_STYLE,id='NAMTURBdiag-button'),
-		dbc.Collapse(
-            		html.Div([DivDiagNAMTURB,DivDiagNAMTURBvalues],style=sty.STYLE1),
-            		id="NAMTURBdiag",
-            		is_open=True,
-        		)],id="NAMTURB",is_open=True)],style=sty.STYLE_NAMELIST)
+# Particular settings
+Options['PARAMn']['divskeys']['NAMPARAMgeneral'].children.insert(5,html.Br())
 
-#PARAMn
-DivGeneralNAMPARAM = create_subDiv(Options['PARAMn'],0)
-DivGeneralNAMPARAM.children.insert(5,html.Br()) # Add by hand a new return lineS
+# Keys-value div
+col_allNamelists = html.Div(children=all_namelistdivs,style=sty.STYLE_COL_NAMELISTS)
 
-DivGeneralNAMPARAMvalues = create_subDivvalues(Options['PARAMn'],0)
-
-#3 Automatiser le Div final (peut être + difficile)           
-col_paramn = html.Div(children=[dbc.Collapse([
-		html.H5('&NAM_PARAMn',style=sty.TEXT_STYLE),
-		dbc.Collapse(
-            		html.Div([DivGeneralNAMPARAM,DivGeneralNAMPARAMvalues],style=sty.STYLE1),
-            		id="NAMPARAMgeneral",
-            		is_open=True,
-        		)],id="NAMPARAM",is_open=True)],style=sty.STYLE_NAMELIST)
-
-col_allNamelists = html.Div(children=[col_turbn,col_paramn],style=sty.STYLE_COL_NAMELISTS)
+# Documentation div
 col_doc =  html.Div(id='container-userguide',style=sty.DOC_STYLE)
 
+# Sidebar div
 sidebar = html.Div([
         html.H2('Namelist groups', style=sty.TEXT_STYLE),
         html.Hr(),
         html.H4('&NAM_PARAMn',style=sty.TEXT_STYLE, id='NAMPARAM-button'),
         html.H4('&NAM_TURBn',style=sty.TEXT_STYLE, id='NAMTURB-button'),
     ],style=sty.SIDEBAR_STYLE)
-    
+
+# Upper static div
 LineTopStatic = html.Div([
     html.Div(children=[
     html.H4('Keys',style=sty.TEXT_STYLE),
@@ -246,9 +242,11 @@ def ButtonNam(nameid):
         		return not is_open
     		return is_open
 
-# Créations des callbacks boutons
-for b in ButtonNamelists:
-	ButtonNam(b)
+# Create callbacks for hide/show buttons
+for nam in Options.keys():
+        for b in Options[nam]['buttonName']:
+        	if b != '': # empty buttonName is possible
+        		ButtonNam(b)
 
 if __name__ == '__main__':
     app.run_server(debug=True,port='8086')
