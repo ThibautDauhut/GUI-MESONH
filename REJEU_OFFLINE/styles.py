@@ -6,7 +6,8 @@ SIDEBAR_STYLE = {
     'width': '15%',
     'padding': '20px 10px',
     'background-color': '#f8f9fa',
-    'border': '0px solid black'
+    'border': '0px solid black',
+    'overflow': 'scroll'
 }
 # User's guide column style
 DOC_STYLE = {

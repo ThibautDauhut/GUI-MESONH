@@ -75,21 +75,22 @@ def create_KeyValuesDiv(DNamelist):
         			html.Div([DNamelist['divskeys'][div],DNamelist['divsvalues'][div]],style=sty.STYLE1),
         			id=div,
         			is_open=True))
-    collapse_general = dbc.Collapse(contentdiv, id=DNamelist['buttonName'][0], is_open=True)
+    collapse_general = dbc.Collapse(contentdiv, id=DNamelist['buttonName'][0], is_open=False)
     return html.Div(children=collapse_general, style=sty.STYLE_NAMELIST)
 
 #Automatisation :
+#1) récupérer toutes les clés dans chaque namelist en lisant le fichier from_f90
 #2) valeur par défaut : lire default_desfmn.f90
 #3) valeur possible pour les chaines de caractères : lire les appels à TEST_NAM_VAR dans read_exsegn
-#4) la fonction d'automatisation a en option : la possibilité d'exclure certaines namelists et clés déjà codées en dur
-# ou bien aller regarder en entrée uniquement certaines namelist en entrée (leur nom + catName, buttonName, divName)
+#4) la fonction d'automatisation a en option : la possibilité d'exclure certaines namelists
 #5) coder une fonction qui trie les clé namelist dans Options par ordre alphabétique à la fin
+#6) Ajouter le ou les sous-programme associés à chaque namelist
 
 # Get the full options dict
 Options = opt.create_options()
 
 # Create key-values namelist divs list
-all_namelistdivs=[]
+all_namelistdivs = []
 for opt in Options.keys():
 	Options[opt]['mainDiv'] = create_KeyValuesDiv(Options[opt])
 	all_namelistdivs.append(Options[opt]['mainDiv'])
@@ -104,12 +105,12 @@ col_allNamelists = html.Div(children=all_namelistdivs,style=sty.STYLE_COL_NAMELI
 col_doc =  html.Div(id='container-userguide',style=sty.DOC_STYLE)
 
 # Sidebar div
-sidebar = html.Div([
-        html.H2('Namelist groups', style=sty.TEXT_STYLE),
-        html.Hr(),
-        html.H4('&NAM_PARAMn',style=sty.TEXT_STYLE, id='NAMPARAM-button'),
-        html.H4('&NAM_TURBn',style=sty.TEXT_STYLE, id='NAMTURB-button'),
-    ],style=sty.SIDEBAR_STYLE)
+sidebar_content = []
+sidebar_content.append(html.H2('Namelist groups', style=sty.TEXT_STYLE))
+sidebar_content.append(html.Hr())
+for nam in Options.keys():
+	sidebar_content.append(html.H4('&NAM_'+nam, style=sty.TEXT_STYLE, id=Options[nam]['buttonName'][0]+'-button'))
+sidebar = html.Div(sidebar_content, style=sty.SIDEBAR_STYLE)
 
 # Upper static div
 LineTopStatic = html.Div([

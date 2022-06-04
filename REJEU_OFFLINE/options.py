@@ -6,7 +6,7 @@ Options_init = {
 #            - empty name for buttonName is possible
 'TURBn': {'name': 'NAM\_TURBn',
         'catName': ['Général','Subgrid condensation','Online diagnostics'],
-        'buttonName': ['NAMTURB','NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
+        'buttonName': ['NAMTURBn','NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
         'divName': ['NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
         'divskeys':{}, 'divsvalues':{}, 'mainDiv':{},
         'keys':{
@@ -82,6 +82,27 @@ Options_init = {
         }
 }
 
+def lookfor_namelist_name(i):
+# Look for all the namelist defined in the fortran code by 'NAMELIST/' from a file that contains a grep in folder MNH/ and SURFEX/
+	s_after_fortranname = i[i.index('NAMELIST/')+9:]
+	namelist = s_after_fortranname[:s_after_fortranname.index('/')]
+	return namelist
+
+def get_all_namelists():
+	fin = open('NAMELIST_MNH.txt', 'r')
+	contentbyline = fin.readlines()
+	namelists_MNH,f90files_MNH,namelists_SURFEX,f90files_SURFEX=[],[],[],[]
+	for i in contentbyline:
+		f90files_MNH.append(i[:i.index('.f90') + 4])
+		namelists_MNH.append(lookfor_namelist_name(i))
+	
+	fin = open('NAMELIST_SURFEX.txt', 'r')
+	contentbyline = fin.readlines()
+	for i in contentbyline:
+		f90files_SURFEX.append(i[:i.index('.F90') + 4])
+		namelists_SURFEX.append(lookfor_namelist_name(i))
+	return namelists_MNH,f90files_MNH,namelists_SURFEX,f90files_SURFEX
+	
 def get_keys_types(options):
 	for nam in options.keys():
         	for k in options[nam]['keys']:
@@ -94,8 +115,58 @@ def get_keys_types(options):
         				options[nam]['keys'][k]['type'] = k[0] # C or L
 	return options
 
+def init_all_options(options, namelists, f90files):
+	# Meso-NH
+	for i,nam in enumerate(namelists[0]):
+		shortName = nam[4:]
+		model = 'mesonh'
+		name = nam.replace('_','\_')
+		from_f90 = f90files[0][i]
+		print(shortName)
+		try:
+			options[shortName]
+		except(KeyError):
+			options[shortName] = {}
+			options[shortName]['name'] = name
+			options[shortName]['fromf90'] = from_f90
+			options[shortName]['keys'] = {}
+			options[shortName]['catName'] = []
+			options[shortName]['buttonName'] = ['NAM'+shortName]
+			options[shortName]['divName'] = []
+			options[shortName]['divskeys'], options[shortName]['divsvalues'], options[shortName]['mainDiv'] = {}, {}, {}
+	# SURFEX
+	for i,nam in enumerate(namelists[1]):
+		shortName = nam[4:]
+		model = 'surfex'
+		name = nam.replace('_','\_')
+		from_f90 = f90files[1][i]
+		try:
+			options[shortName]
+		except(KeyError):
+			options[shortName] = {}
+			options[shortName]['name'] = name
+			options[shortName]['fromf90'] = from_f90
+			options[shortName]['keys'] = {}
+			options[shortName]['catName'] = []
+			options[shortName]['buttonName'] = ['NAM'+shortName]
+			options[shortName]['divName'] = []
+			options[shortName]['divskeys'], options[shortName]['divsvalues'], options[shortName]['mainDiv'] = {}, {}, {}
+	return options
+
 def create_options():
+	#Options filled by hand
 	Options = Options_init
+	
+	# Get all namelists names and fill the dict
+	namelists_MNH, f90files_MNH, namelists_SURFEX, f90files_SURFEX = get_all_namelists()
+	Options = init_all_options(Options, [namelists_MNH, namelists_SURFEX] , [f90files_MNH, f90files_SURFEX])
+	
+	# Get all keys
+	
+	# Get default values
+	
+	# Get possible values for strings keys
+	
+	# After all keys were written
 	Options = get_keys_types(Options)
-	print(Options['PARAMn']['keys']['CCLOUD']['type'])
 	return Options
