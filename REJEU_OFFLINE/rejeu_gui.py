@@ -2,6 +2,7 @@ from dash import Dash, html, dcc, Input, Output, State, callback_context
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import styles as sty
+import options as opt
 from read_tex import KEYdoc
 
 def create_Cgrp(options, idname, defaultvalue):
@@ -63,7 +64,6 @@ def create_KeyValuesDiv(DNamelist):
 
     # Creates first keys divs and values divs à la volée and save it to Options dict
     for n,div in enumerate(DNamelist['divName']):
-        print(div)
         DNamelist['divskeys'][div] = create_subDiv(DNamelist, n)
         DNamelist['divsvalues'][div] = create_subDivvalues(DNamelist, n)
 
@@ -78,90 +78,15 @@ def create_KeyValuesDiv(DNamelist):
     collapse_general = dbc.Collapse(contentdiv, id=DNamelist['buttonName'][0], is_open=True)
     return html.Div(children=collapse_general, style=sty.STYLE_NAMELIST)
 
+#Automatisation :
+#2) valeur par défaut : lire default_desfmn.f90
+#3) valeur possible pour les chaines de caractères : lire les appels à TEST_NAM_VAR dans read_exsegn
+#4) la fonction d'automatisation a en option : la possibilité d'exclure certaines namelists et clés déjà codées en dur
+# ou bien aller regarder en entrée uniquement certaines namelist en entrée (leur nom + catName, buttonName, divName)
+#5) coder une fonction qui trie les clé namelist dans Options par ordre alphabétique à la fin
 
-Options = {
-#            - 'divskeys':{}, 'divsvalues':{} doivent être des dics nuls (sont remplis par la suite)
-#            - len(catName) must be == len(divName). empty name for catName is possible
-#            - 'name' is the latex user's guide convention with \_
-#            - len(buttonName) must be == len(divName) + 1 (with the first button = the general id button name for the sidebar
-#            - empty name for buttonName is possible
-'TURBn': {'name': 'NAM\_TURBn',
-        'catName': ['Général','Subgrid condensation','Online diagnostics'],
-        'buttonName': ['NAMTURB','NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
-        'divName': ['NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
-        'divskeys':{}, 'divsvalues':{}, 'mainDiv':{},
-        'keys':{
-                'XIMPL':{'type':'Input','min': 0, 'max': 1, 'cat': 0, 'def': 1},
-                'CTURBLEN':{'type':'C', 'def':'BL89', 'cat': 0,
-                            'options': [{"label": "BL89", "value": "BL89"},
-                                        {"label": "RM17", "value": "RM17"},
-                                        {"label": "ADAP", "value": "ADAP"},
-                                        {"label": "DEAR", "value": "DEAR"},
-                                        {"label": "DELT", "value": "DELT"}]},
-                'CTOM':{'type':'C', 'def':'NONE', 'cat': 0,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "TM06", "value": "TM06"}]},
-                'LRMC01':{'type':'L', 'def': 'False', 'cat': 0},
-                'XKEMIN':{'type':'Input','min': 0, 'max': 10, 'cat': 0, 'def': 0.01},
-                'XCEDIS':{'type':'Input','min': 0, 'max': 10, 'cat': 0, 'def': 0.84},
-                'LSUBG_COND':{'type':'L', 'def': 'False', 'cat': 1},
-                'CCONDENS':{'type':'C', 'def':'CB02', 'cat': 1,
-                            'options': [{"label": "CB02", "value": "CB02"},
-                                        {"label": "GAUS", "value": "GAUS"}]},
-                'CLAMBDA3':{'type':'C', 'def':'CB', 'cat': 1,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "CB", "value": "CB"}]},
-                'CSUBG_AUCV':{'type':'C', 'def':'NONE', 'cat': 1,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "SIGM", "value": "SIGM"},
-                                        {"label": "CLFR", "value": "CLFR"},
-                                        {"label": "PDF", "value": "PDF"},
-                                        {"label": "ADJU", "value": "ADJU"}]},
-                'CSUBG_AUCV_RI':{'type':'C', 'def':'NONE', 'cat': 1,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "CLFR", "value": "CLFR"},
-                                        {"label": "ADJU", "value": "ADJU"}]},
-                'CSUBG_MF_PDF':{'type':'C', 'def':'TRIANGLE', 'cat': 1,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "TRIANGLE", "value": "TRIANGLE"}]},
-                'LTURB_FLX':{'type':'L', 'def': 'False', 'cat': 2},
-                'LTURB_DIAG':{'type':'L', 'def': 'False', 'cat': 2},
-                }
-        },
-'PARAMn': {'name': 'NAM\_PARAMn',
-	   'catName': [''],
-	   'buttonName': ['NAMPARAM',''],
-	   'divName': ['NAMPARAMgeneral'],
-           'divskeys':{}, 'divsvalues':{}, 'mainDiv':{},
-        'keys':{
-                'CTURB':{'type':'C', 'def':'TKEL', 'cat': 0,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "TKEL", "value": "TKEL"}]},
-                'CRAD':{'type':'C', 'def':'ECMW', 'cat': 0,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "TOPA", "value": "TOPA"},
-                                        {"label": "FIXE", "value": "FIXE"},
-                                        {"label": "ECMW", "value": "ECMW"},
-                                        {"label": "ECRAD", "value": "ECRAD"}]},
-                'CCLOUD':{'type':'C', 'def':'ICE3', 'cat': 0,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "REVE", "value": "REVE"},
-                                        {"label": "KESS", "value": "KESS"},
-                                        {"label": "C2R2", "value": "C2R2"},
-                                        {"label": "KHKO", "value": "KHKO"},
-                                        {"label": "ICE3", "value": "IEC3"},
-                                        {"label": "ICE4", "value": "ICE4"},
-                                        {"label": "LIMA", "value": "LIMA"}]},
-                'CDCONV':{'type':'C', 'def':'NONE', 'cat': 0,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "EDKF", "value": "EDKF"}]},
-                'CSCONV':{'type':'C', 'def':'EDKF', 'cat': 0,
-                            'options': [{"label": "NONE", "value": "NONE"},
-                                        {"label": "KAFR", "value": "KAFR"},
-                                        {"label": "EDKF", "value": "EDKF"}] }
-                }
-        }
-}
+# Get the full options dict
+Options = opt.create_options()
 
 # Create key-values namelist divs list
 all_namelistdivs=[]
