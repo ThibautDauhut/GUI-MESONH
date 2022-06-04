@@ -116,41 +116,25 @@ def get_keys_types(options):
 	return options
 
 def init_all_options(options, namelists, f90files):
-	# Meso-NH
-	for i,nam in enumerate(namelists[0]):
-		shortName = nam[4:]
-		model = 'mesonh'
-		name = nam.replace('_','\_')
-		from_f90 = f90files[0][i]
-		print(shortName)
-		try:
-			options[shortName]
-		except(KeyError):
-			options[shortName] = {}
-			options[shortName]['name'] = name
-			options[shortName]['fromf90'] = from_f90
-			options[shortName]['keys'] = {}
-			options[shortName]['catName'] = []
-			options[shortName]['buttonName'] = ['NAM'+shortName]
-			options[shortName]['divName'] = []
-			options[shortName]['divskeys'], options[shortName]['divsvalues'], options[shortName]['mainDiv'] = {}, {}, {}
-	# SURFEX
-	for i,nam in enumerate(namelists[1]):
-		shortName = nam[4:]
-		model = 'surfex'
-		name = nam.replace('_','\_')
-		from_f90 = f90files[1][i]
-		try:
-			options[shortName]
-		except(KeyError):
-			options[shortName] = {}
-			options[shortName]['name'] = name
-			options[shortName]['fromf90'] = from_f90
-			options[shortName]['keys'] = {}
-			options[shortName]['catName'] = []
-			options[shortName]['buttonName'] = ['NAM'+shortName]
-			options[shortName]['divName'] = []
-			options[shortName]['divskeys'], options[shortName]['divsvalues'], options[shortName]['mainDiv'] = {}, {}, {}
+	models = ['mesonh','surfex']
+	for m,model in enumerate(models):
+		for i,nam in enumerate(namelists[m]):
+			shortName = nam[4:]
+			modelName = model
+			name = nam.replace('_','\_')
+			from_f90 = f90files[m][i]
+			try:
+				options[shortName]
+			except(KeyError):
+				options[shortName] = {}
+				options[shortName]['model'] = modelName
+				options[shortName]['name'] = name
+				options[shortName]['fromf90'] = from_f90
+				options[shortName]['keys'] = {}
+				options[shortName]['catName'] = []
+				options[shortName]['buttonName'] = ['NAM'+shortName]
+				options[shortName]['divName'] = []
+				options[shortName]['divskeys'], options[shortName]['divsvalues'], options[shortName]['mainDiv'] = {}, {}, {}
 	return options
 
 def create_options():
