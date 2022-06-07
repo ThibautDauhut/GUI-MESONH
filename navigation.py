@@ -542,12 +542,12 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
             date_run = start_day + datetime.timedelta(days=i)
             today_str = date_run.strftime('%Y%m%d')
             
-            #if id_user1 not in courbe_affichee and ['tmp_2m'] in data_user[today_str]: 
+            if id_user not in courbe_affichee and 'tmp_2m' in data_user[today_str]: 
             #and isinstance(data_user[today_str]['tmp_2m'], (list, np.ndarray)):
-               # courbe_affichee.append(selection)
-                # afficher_legende = True
-            #else:
-                #afficher_legende = False
+               courbe_affichee.append(id_user)
+               afficher_legende = True
+            else:
+               afficher_legende = False
                 
             for param in params:
                 try:
@@ -560,12 +560,52 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
                                 line=dict(
                                     color='black',
                                     dash=types[j]),
-                                name='MésoNH modifié (id : ' + str(id_user) + ' )',showlegend=False))
+                                name='MésoNH modifié (id : ' + str(id_user) + ' )',showlegend=afficher_legende))
                         # print(data_user)
                 except KeyError:
                     pass
                 # Ici le try/except permet de ne rien afficher lorsque les données ne sont
                 # pas disponibles
+
+
+# Pour les 5 rejeux possibles de SURFEX, correspondants aux différents id_user :
+
+    # différentes valeurs pour l'attribut "dash" du paramètre "line" qui
+    # donnent le type de tracé (trait plein/pointillés/tirets/longs
+    # tirets/alternance tirets-points)
+    types = ['solid', 'dot', 'dash', 'longdash', 'dashdot']
+    for j, id_user in enumerate([id_user1, id_user2, id_user3, id_user4, id_user5]):
+        data_surfex_user = lecture_surfex.surfex_user(start_day, end_day, id_user, params)
+        nb_jour = (end_day - start_day).days
+
+        courbe_affichee_surfex=[]
+        for i in range(nb_jour + 1):
+            date_run = start_day + datetime.timedelta(days=i)
+            today_str = date_run.strftime('%Y%m%d')
+
+            if id_user not in courbe_affichee_surfex and 'tmp_2m' in data_surfex_user[today_str]: 
+            #and isinstance(data_user[today_str]['tmp_2m'], (list, np.ndarray)):
+                courbe_affichee_surfex.append(id_user)
+                afficher_legende = True
+            else:
+                afficher_legende = False
+
+            for param in params:
+                try:
+                    if isinstance(data_surfex_user[today_str][param],
+                                  (list, np.ndarray)):  # On vérifie qu'il y a des données
+                        chart[param].add_trace(
+                            go.Scatter(
+                                x=data_surfex_user[today_str]['time'],
+                                y=data_surfex_user[today_str][param],
+                                line=dict(
+                                    color='black',
+                                    dash=types[j]),
+                                name='SURFEX modifié (id : ' + str(id_user) + ' )',showlegend=afficher_legende))
+                        # print(data_user)
+                except KeyError:
+                    pass
+                # Ici le try/except permet de ne rien afficher lorsque les données ne sont
 
 
 # Pour les Obs de Météopole Flux, affichées par défaut car une seule option dans le widget :
@@ -1174,9 +1214,7 @@ def calcul_biais(start_day, end_day):
         #on utilise le 'id_user' en tant que nom du 'model' pour le dictionnaire
         
         """
-
         for id_user in ["RM17", "LIMASB"]:
-
             
            #print("MODEL ID_USER :", id_user) 
            data_user = lecture_mesoNH.mesoNH_user(start_day,end_day,id_user,params) 
@@ -1253,9 +1291,9 @@ def calcul_biais(start_day, end_day):
                           
                except:
                   pass                          
+                         
         
       """                     
-
                             
                             
                             

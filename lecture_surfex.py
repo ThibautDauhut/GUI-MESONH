@@ -97,7 +97,7 @@ def surfex_user(start_day, end_day, id_user, params):
             try:
                 
                 #print("LECTURE FICHIER SURFEX_USER")
-                f = nc.Dataset('/home/manip/MeteopoleX/models/runs/OUTPUT/SURFEX/' + today_str + '/SURFEX_'+ id_user +"_"+ today_str + '_Rt.nc')
+                f = nc.Dataset('/home/manip/MeteopoleX/models/runs/OUTPUT/SURFEX/' + str(today_str) + '/SURFEX_'+ str(id_user) +"_"+ str(today_str) + '_Rt.nc')
                 #print("LECTURE OK")
                 # ou bien /home/manip/METEOPOLEX/OUTPUT/SURFEX
                 if 'time' not in data_surfex_user[today_str]:
