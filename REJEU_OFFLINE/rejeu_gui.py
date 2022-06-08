@@ -283,10 +283,13 @@ for nam in Options.keys():
     inputs)
 def displayClick(*args):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    #changed_id is a key name + 'labdoc.' + 'n_clicks'
+    size_to_remove = len('labdoc') + 1 + len('n_clicks')
+    key_triggered = changed_id[:-size_to_remove]
     msg=''
     for nam in Options.keys():
         for keys in Options[nam]['keys'].keys():
-    	     if keys in changed_id:
+    	     if keys == key_triggered:
                  msg = KEYdoc('simulation.tex',Options[nam]['name'],keys.replace('_','\_'))    
                  break
     return html.Div(msg)
