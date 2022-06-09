@@ -152,6 +152,7 @@ def mesoNH_user(start_day, end_day, id_user, params):
                 groupSBG  = '/LES_budgets/Subgrid/Cartesian/Not_time_averaged/Not_normalized/cart/'
                 groupSURF = '/LES_budgets/Surface/Cartesian/Not_time_averaged/Not_normalized/cart/'
                 groupRAD = '/LES_budgets/Radiation/Cartesian/Not_time_averaged/Not_normalized/cart/'
+                groupGLOB = '/Time_series/TSERIES/GLOB/'
 
                 if 'time' not in data_user[today_str]:
 
@@ -209,6 +210,8 @@ def mesoNH_user(start_day, end_day, id_user, params):
                             data_user[today_str][param] = (f[groupRAD].variables['SWD'][:, 1]+f[groupRAD].variables['SWD'][:, 2])/2
                         if param == "tke":
                             data_user[today_str][param] = (f[groupSBG].variables['SBG_TKE'][:, 1]+f[groupSBG].variables['SBG_TKE'][:, 2])/2
+                        if param == "cumul_RR":
+                            data_user[today_str][param] = (f[groupGLOB].variables['INPRT_GLOB'][:])/96
             except FileNotFoundError:
                 pass
             except TypeError:
