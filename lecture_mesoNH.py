@@ -50,6 +50,7 @@ def mesoNH(start_day, end_day, models, params):
                     groupSURF = '/LES_budgets/Surface/Cartesian/Not_time_averaged/Not_normalized/cart/'
                     groupRAD  = '/LES_budgets/Radiation/Cartesian/Not_time_averaged/Not_normalized/cart/'
                     groupGLOB = '/Time_series/TSERIES/GLOB/'
+                    groupMISC = '/LES_budgets/Miscellaneous/Cartesian/Not_time_averaged/Not_normalized/cart/'
 
                     if 'time' not in data_mnh[today_str]:
                         data_mnh[today_str]['time'] = {}
@@ -116,6 +117,21 @@ def mesoNH(start_day, end_day, models, params):
 #                                if param == "altitude_CL" :
 #                                    data_mnh[today_str][model][param] = f2.variables['HBLTOP'].data[:96]
 
+
+#Paramètres microphysiques simulés
+                                if param == "LWP":
+                                   data_mnh[today_str][model][param] = f[groupMISC].variables['LWP'][:]                                 
+                                if param == "RWP":
+                                   data_mnh[today_str][model][param] = f[groupMISC].variables['RWP'][:]
+                                if param == "IWP":
+                                   data_mnh[today_str][model][param] = f[groupMISC].variables['IWP'][:]                                    
+                                if param == "SWP":
+                                   data_mnh[today_str][model][param] = f[groupMISC].variables['SWP'][:]
+                                if param == "GWP":
+                                   data_mnh[today_str][model][param] = f[groupMISC].variables['GWP'][:] 
+                                if param == "ZXCF":
+                                   data_mnh[today_str][model][param] = f[groupMISC].variables['ZMAXCF'][:]  
+                                    
                 except FileNotFoundError:
                     pass
     return data_mnh
@@ -153,7 +169,8 @@ def mesoNH_user(start_day, end_day, id_user, params):
                 groupSURF = '/LES_budgets/Surface/Cartesian/Not_time_averaged/Not_normalized/cart/'
                 groupRAD = '/LES_budgets/Radiation/Cartesian/Not_time_averaged/Not_normalized/cart/'
                 groupGLOB = '/Time_series/TSERIES/GLOB/'
-
+                groupMISC = '/LES_budgets/Miscellaneous/Cartesian/Not_time_averaged/Not_normalized/cart/'
+                    
                 if 'time' not in data_user[today_str]:
 
                     data_user[today_str]['time'] = {}
@@ -212,6 +229,22 @@ def mesoNH_user(start_day, end_day, id_user, params):
                             data_user[today_str][param] = (f[groupSBG].variables['SBG_TKE'][:, 1]+f[groupSBG].variables['SBG_TKE'][:, 2])/2
                         if param == "cumul_RR":
                             data_user[today_str][param] = (f[groupGLOB].variables['INPRT_GLOB'][:])/96
+                            
+#Paramètres microphysiques simulés
+                        if param == "LWP" :
+                           data_user[today_str][param] = f[groupMISC].variables['LWP'][:]                                 
+                        if param == "RWP" :
+                           data_user[today_str][param] = f[groupMISC].variables['RWP'][:]
+                        if param == "IWP" :
+                           data_user[today_str][param] = f[groupMISC].variables['IWP'][:]                                    
+                        if param == "SWP" :
+                           data_user[today_str][param] = f[groupMISC].variables['SWP'][:]
+                        if param == "GWP" :
+                           data_user[today_str][param] = f[groupMISC].variables['GWP'][:] 
+                        if param == "ZXCF" :
+                           data_user[today_str][param] = f[groupMISC].variables['ZMAXCF'][:]                            
+                            
+                            
             except FileNotFoundError:
                 pass
             except TypeError:
