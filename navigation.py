@@ -221,7 +221,7 @@ dico_params = {
     "cumul_RR": {
         "index_obs": "prp_rr_min_c2_%60_Som_%1800",
         "index_model": "",
-        "title": "Cumuls du pluie sur 30 min",
+        "title": "Cumuls de pluie (Obs: 30mn, ARO-ARP: 1h, MNH: 15mn)",
         "unit": "mm"
     },
     "altitude_CL": {
