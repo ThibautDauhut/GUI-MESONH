@@ -51,7 +51,7 @@ def surfex(start_day, end_day, models, params):
                                 if param == "vent_ff10m":
                                     data_surfex[today_str][model][param] = []
                                 if param == "hum_rel":
-                                    data_surfex[today_str][model][param] = f['HU2M'][12:36,0, 0]* 1000  # TODO conversion HU
+                                    data_surfex[today_str][model][param] = f['HU2M'][12:36,0, 0]* 100  # TODO conversion HU
 #                                if param == "flx_mvt":
 #                                    data_surfex[today_str][model][param] = []
                                 if param == "flx_chaleur_sens":
@@ -114,13 +114,13 @@ def surfex_user(start_day, end_day, id_user, params):
                         if param not in data_surfex_user[today_str]:
                             data_surfex_user[today_str][param] = {}
                             if param == "tmp_2m":
-                                data_surfex_user[today_str][param] = f['T2M'][12:36,0, 0] - 273.15
+                                data_surfex_user[today_str][param] = f['T2M'][:24,0, 0] - 273.15
                             if param == "tmp_10m":
                                 data_surfex_user[today_str][param] = []
                             if param == "vent_ff10m":
                                 data_surfex_user[today_str][param] = []
                             if param == "hum_rel":
-                                data_surfex_user[today_str][param] = f['HU2M'][12:36,0, 0] * 1000  # TODO conversion HU
+                                data_surfex_user[today_str][param] = f['HU2M'][:24,0, 0] * 100  # TODO conversion HU
 #                            if param == "flx_mvt":
 #                                data_surfex[today_str][model][param] = []
                             if param == "flx_chaleur_sens":
