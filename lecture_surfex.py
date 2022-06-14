@@ -45,13 +45,13 @@ def surfex(start_day, end_day, models, params):
                             if param not in data_surfex[today_str][model]:
                                 data_surfex[today_str][model][param] = {}
                                 if param == "tmp_2m":
-                                    data_surfex[today_str][model][param] = f['T2M'][12:36,0, 0]- 273.15
+                                    data_surfex[today_str][model][param] = f['T2M'][:24,0, 0]- 273.15
                                 if param == "tmp_10m":
                                     data_surfex[today_str][model][param] = []
                                 if param == "vent_ff10m":
                                     data_surfex[today_str][model][param] = []
                                 if param == "hum_rel":
-                                    data_surfex[today_str][model][param] = f['HU2M'][12:36,0, 0]* 100  # TODO conversion HU
+                                    data_surfex[today_str][model][param] = f['HU2M'][:24,0, 0]* 100  # TODO conversion HU
 #                                if param == "flx_mvt":
 #                                    data_surfex[today_str][model][param] = []
                                 if param == "flx_chaleur_sens":
@@ -62,6 +62,8 @@ def surfex(start_day, end_day, models, params):
                                     data_surfex[today_str][model][param] = f['LWU'][:,0, 0].data[:24]
                                 if param == "SWD":
                                     data_surfex[today_str][model][param] = f['SWD'][:,0, 0].data[:24]
+                                if param == "flx_chaleur_sol":
+                                    data_surfex[today_str][model][param] = f['GFLUX'][:, 0, 0][:24] 
                                 if param == "t_surface":
                                     data_surfex[today_str][model][param] = f['TSRAD_ISBA'][:,0, 0].data[:24] - 273.15
                                 if param == "t-1":
@@ -131,6 +133,8 @@ def surfex_user(start_day, end_day, id_user, params):
                                 data_surfex_user[today_str][param] = f['LWU'][:,0, 0].data[:24]
                             if param == "SWD":
                                 data_surfex_user[today_str][param] = f['SWD'][:,0, 0].data[:24]
+                            if param == "flx_chaleur_sol":
+                                data_surfex_user[today_str][param] = f['GFLUX'][:, 0, 0][:24]
                             if param == "t_surface":
                                 data_surfex_user[today_str][param] = f['TSRAD_ISBA'][:,0, 0].data[:24] - 273.15
                             if param == "t-1":

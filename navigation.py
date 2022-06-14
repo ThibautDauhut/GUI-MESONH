@@ -169,6 +169,12 @@ dico_params = {
         "title": "Vitesse de friction",
         "unit": "m/s"
     },
+    "tke": {
+        "index_obs": "trb_ect_gill_tke_%1800",
+        "index_model": "",
+        "title": "Energie cinétique turbulente",
+        "unit": "m²/s²"
+        },
     "flx_chaleur_sens": {
         "index_obs": "flx_hs_tson_Chb_%1800",
         "index_model": "flx_hs",
@@ -180,14 +186,7 @@ dico_params = {
         "index_model": "flx_le",
         "title": "Flux de chaleur latente",
         "unit": "W/m²"
-    },
-    "tke": {
-        "index_obs": "trb_ect_gill_tke_%1800",
-        "index_model": "",
-        "title": "Energie cinétique turbulente",
-        "unit": "m²/s²"
-        },
-
+    },    
     "SWD": {
         "index_obs": "ray_rgd_cnr1_c2_%60_Met_%1800",
         "index_model": "ray_rgd",
@@ -198,6 +197,12 @@ dico_params = {
         "index_obs": "ray_irm_cnr1_c2_%60_Met_%1800",
         "index_model": "ray_irm",
         "title": "Rayonnement IR montant (LW)",
+        "unit": "W/m²"
+    },    
+    "flx_chaleur_sol": {
+        "index_obs": "flx_phi0_moy_c2_%60",
+        "index_model": "",
+        "title": "Flux de conduction dans le sol",
         "unit": "W/m²"
     },
     "t_surface": {
@@ -263,11 +268,12 @@ params = [
     "hum_rel",
     "vent_ff10m",
     "flx_mvt",
+    "tke",
     "flx_chaleur_sens",
     "flx_chaleur_lat",
-    "tke",
     "SWD",
-    "LWU",
+    "LWU",    
+    "flx_chaleur_sol",
     "t_surface",
     "t-1",
     "hu_couche1",
