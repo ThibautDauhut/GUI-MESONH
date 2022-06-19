@@ -38,7 +38,8 @@ def create_subDiv(DNamelist,icat):
     contentdiv=[]
     for k in DNamelist['keys'].keys():
         if DNamelist['keys'][k]['cat'] == icat:
-            contentdiv.append(html.Label(k, id=k+'labdoc'))
+            bname = DNamelist['name']+k
+            contentdiv.append(html.Label(k, id=bname+'labdoc'))
             contentdiv.append(html.Br())
     return html.Div(children=contentdiv,style=sty.STYLE_KEYS)
     
@@ -47,13 +48,14 @@ def create_subDivvalues(DNamelist,icat):
     contentdiv=[]
     for k in DNamelist['keys'].keys():
         if DNamelist['keys'][k]['cat'] == icat:
+            labelName = DNamelist['name']+k
             if DNamelist['keys'][k]['type'] == 'Input':
                 contentdiv.append(dbc.Input(type="number", min=DNamelist['keys'][k]['min'], max=DNamelist['keys'][k]['max'], 
-                style={'width':'18%','font-size':'9pt'}, value=DNamelist['keys'][k]['def'], id=k+'-sel'))
+                style={'width':'18%','font-size':'9pt'}, value=DNamelist['keys'][k]['def'], id=labelName+'-sel'))
             elif DNamelist['keys'][k]['type'] == 'L':
-                contentdiv.append(create_Lgrp(k+'-sel',DNamelist['keys'][k]['def']))
+                contentdiv.append(create_Lgrp(labelName+'-sel',DNamelist['keys'][k]['def']))
             elif DNamelist['keys'][k]['type'] == 'C':
-                contentdiv.append(create_Cgrp(DNamelist['keys'][k]['options'], k+'-sel',DNamelist['keys'][k]['def']))
+                contentdiv.append(create_Cgrp(DNamelist['keys'][k]['options'], labelName+'-sel',DNamelist['keys'][k]['def']))
             else:
             	pass
     contentdiv.append(html.Hr()) # Last ligne is a full line
@@ -79,7 +81,6 @@ def create_KeyValuesDiv(DNamelist):
     return html.Div(children=collapse_general, style=sty.STYLE_NAMELIST)
 
 #Automatisation :
-#1) récupérer toutes les clés dans chaque namelist en lisant le fichier from_f90
 #2) valeur par défaut : lire default_desfmn.f90
 #3) valeur possible pour les chaines de caractères : lire les appels à TEST_NAM_VAR dans read_exsegn
 #4) la fonction d'automatisation a en option : la possibilité d'exclure certaines namelists
@@ -96,7 +97,7 @@ for opt in Options.keys():
 	all_namelistdivs.append(Options[opt]['mainDiv'])
 
 # Particular settings
-Options['PARAMn']['divskeys']['NAMPARAMgeneral'].children.insert(5,html.Br())
+Options['PARAMn']['divskeys']['NAMPARAMngeneral'].children.insert(5,html.Br())
 
 # Keys-value div
 col_allNamelists = html.Div(children=all_namelistdivs,style=sty.STYLE_COL_NAMELISTS)
@@ -137,7 +138,8 @@ suffix_label='labdoc'
 # Create the list of Inputs for all labels
 for nam in Options.keys():
     for keys in Options[nam]['keys'].keys():
-        inputs.append(Input(keys+suffix_label,'n_clicks'))
+        name_label=Options[nam]['name']+keys
+        inputs.append(Input(name_label+suffix_label,'n_clicks'))
 
 # Callback qui actualise la documentation (container-userguide)
 @app.callback(
@@ -151,8 +153,9 @@ def displayClick(*args):
     msg=''
     for nam in Options.keys():
         for keys in Options[nam]['keys'].keys():
-    	     if keys == key_triggered:
-                 msg = KEYdoc('simulation.tex',Options[nam]['name'],keys.replace('_','\_'))    
+             name_label = Options[nam]['name']+keys
+             if name_label == key_triggered:
+                 msg = KEYdoc('simulation.tex',Options[nam]['name'],keys.replace('_','\_'))
                  break
     return html.Div(msg)
 

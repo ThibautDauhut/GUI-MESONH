@@ -6,8 +6,8 @@ Options_init = {
 #            - empty name for buttonName is possible
 'TURBn': {'name': 'NAM\_TURBn',
         'catName': ['Général','Subgrid condensation','Online diagnostics'],
-        'buttonName': ['NAMTURBn','NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
-        'divName': ['NAMTURBgeneral','NAMTURBsbg','NAMTURBdiag'],
+        'buttonName': ['NAMTURBn','NAMTURBngeneral','NAMTURBnsbg','NAMTURBndiag'],
+        'divName': ['NAMTURBngeneral','NAMTURBnsbg','NAMTURBndiag'],
         'divskeys':{}, 'divsvalues':{}, 'mainDiv':{},
         'keys':{
                 'XIMPL':{'type':'Input','min': 0, 'max': 1, 'cat': 0, 'def': 1},
@@ -49,8 +49,8 @@ Options_init = {
         },
 'PARAMn': {'name': 'NAM\_PARAMn',
 	   'catName': [''],
-	   'buttonName': ['NAMPARAM',''],
-	   'divName': ['NAMPARAMgeneral'],
+	   'buttonName': ['NAMPARAMn','NAMPARAMngeneral'],
+	   'divName': ['NAMPARAMngeneral'],
            'divskeys':{}, 'divsvalues':{}, 'mainDiv':{},
         'keys':{
                 'CTURB':{'type':'C', 'def':'TKEL', 'cat': 0,
@@ -111,6 +111,8 @@ def get_keys_types(options):
         		except(KeyError): # if the type is not already filled, fill in it
         			if k[0] == 'X' or k[0] == 'N' : # real of integer
         				options[nam]['keys'][k]['type'] = 'Input'
+        				options[nam]['keys'][k]['min'] = ''
+        				options[nam]['keys'][k]['max'] = ''
         			else: # Logical or String
         				options[nam]['keys'][k]['type'] = k[0] # C or L
 	return options
@@ -131,12 +133,57 @@ def init_all_options(options, namelists, f90files):
 				options[shortName]['name'] = name
 				options[shortName]['fromf90'] = from_f90
 				options[shortName]['keys'] = {}
-				options[shortName]['catName'] = []
-				options[shortName]['buttonName'] = ['NAM'+shortName]
-				options[shortName]['divName'] = []
+				options[shortName]['catName'] = ['']
+				options[shortName]['buttonName'] = ['NAM'+shortName,'NAM'+shortName+'general'] # [Bouton general de la sidebar, ' Boutton du div general = 1 subdiv par defaut ']
+				options[shortName]['divName'] = ['NAM'+shortName+'general']
 				options[shortName]['divskeys'], options[shortName]['divsvalues'], options[shortName]['mainDiv'] = {}, {}, {}
 	return options
 
+def find_keys_fromf90lines(lines):
+# Returns a list of all keys name given a list of lines read from f90 files
+	Lkeys=[]
+	for l in lines:
+		Lkeys.append(l.split(','))
+	Lkeys_flat = [x for xs in Lkeys for x in xs] #Flatten list of list into a list
+	Lkeys = [x for x in Lkeys_flat if x] # Remove empty object
+	return Lkeys
+
+def get_all_keys(options):
+	for nam in options.keys():
+		if options[nam]['keys'] == {}: # For namelists not filled by hand (still empty)
+			if options[nam]['model'] == 'mesonh':
+				fin = open('MNH/' + options[nam]['fromf90'], 'r')
+			else: 
+				fin = open('SURFEX/' + options[nam]['fromf90'], 'r')
+			contentbyline = fin.readlines()
+			lines_withkeys = []
+			found = False
+			for i in contentbyline:
+				if not found:
+					if 'NAMELIST/'+options[nam]['name'].replace('\_','_') in i:
+						found = True
+						lines_withkeys.append(i)
+				else:
+					if '&' in i:
+						lines_withkeys.append(i)
+					else:
+						break
+			lines_withkeys[0] = lines_withkeys[0].replace('NAMELIST/'+options[nam]['name'].replace('\_','_')+'/','')
+			for n,i in enumerate(lines_withkeys):
+				lines_withkeys[n] = lines_withkeys[n].replace('&','')
+				lines_withkeys[n] = lines_withkeys[n].replace('\n','')
+				lines_withkeys[n] = lines_withkeys[n].replace(' ','')
+			Lkeys=find_keys_fromf90lines(lines_withkeys)
+			# Add the keys to the main Dict
+			if options[nam]['model'] == 'mesonh':
+				for k in Lkeys:
+					options[nam]['keys'][k] = {}
+					options[nam]['keys'][k]['cat'] = 0 #Init all keys in cat 0
+					options[nam]['keys'][k]['options'] = []
+					options[nam]['keys'][k]['def'] = ''
+			else:
+				break
+	return options
 def create_options():
 	#Options filled by hand
 	Options = Options_init
@@ -145,10 +192,9 @@ def create_options():
 	namelists_MNH, f90files_MNH, namelists_SURFEX, f90files_SURFEX = get_all_namelists()
 	Options = init_all_options(Options, [namelists_MNH, namelists_SURFEX] , [f90files_MNH, f90files_SURFEX])
 	
-	# Get all keys
-	
-	# Get default values
-	
+	# Get all keys for all namelists
+	Options = get_all_keys(Options)
+
 	# Get possible values for strings keys
 	
 	# After all keys were written
