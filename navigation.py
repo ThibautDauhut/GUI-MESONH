@@ -361,17 +361,12 @@ def selection_donnees(start_day, end_day):
                                     i = i + 1
 
                         # Les flux pour AROME et ARPEGE OPER sont agrégés entre H et H+1 : On les
-                        # replace à H:30 pour davantage de réalisme
+                        # replace à H:30 pour davantage de réalisme (A faire aussi pour les flux simulations user MNH et SURFEX force par AROME/ARPEGE
                         if param == 'flx_mvt' or param == 'flx_chaleur_sens' or param == 'flx_chaleur_lat' or param == 'SWD' or param == 'LWU':
-
                             if time is not None:
-
                                 i = 0
-
                                 for ts in time:
-
                                     time[i] = time[i] - datetime.timedelta(minutes=30)
-
                                     i = i + 1
 
         chart[param] = go.Figure()
@@ -597,12 +592,16 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
                 afficher_legende = False
 
             for param in params:
-                try:
+                try:                    
                     if isinstance(data_surfex_user[today_str][param],
                                   (list, np.ndarray)):  # On vérifie qu'il y a des données
+                        if param == 'flx_mvt' or param == 'flx_chaleur_sens' or param == 'flx_chaleur_lat' or param == 'SWD' or param == 'LWU':
+                            xTime = data_surfex_user[today_str]['timeFlux']
+                        else :
+                            xTime = data_surfex_user[today_str]['time']
                         chart[param].add_trace(
                             go.Scatter(
-                                x=data_surfex_user[today_str]['time'],
+                                x=xTime,
                                 y=data_surfex_user[today_str][param],
                                 line=dict(
                                     color='black',
@@ -1099,15 +1098,10 @@ def calcul_biais(start_day, end_day):
                 # Les flux pour AROME et ARPEGE OPER sont agrégés entre H et H+1 : On les
                 # replace à H:30 pour davantage de réalisme
                 if param == 'flx_mvt' or param == 'flx_chaleur_sens' or param == 'flx_chaleur_lat' or param == 'SWD' or param == 'LWU':
-
                     if time_mod is not None:
-
                         i = 0
-
                         for ts in time_mod:
-
                             time_mod[i] = time_mod[i] - datetime.timedelta(minutes=30)
-
                             i = i + 1
 
                 if values_mod is None or values_obs is None:
