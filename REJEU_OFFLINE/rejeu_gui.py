@@ -4,6 +4,9 @@ import plotly.express as px
 import styles as sty
 import options as opt
 from read_tex import KEYdoc
+import datetime as dt
+import time
+import shortuuid
 
 def create_Cgrp(options, idname, defaultvalue):
     group =  dbc.Container(
@@ -42,7 +45,7 @@ def create_subDiv(DNamelist,icat):
             contentdiv.append(html.Label(k, id=bname+'labdoc'))
             contentdiv.append(html.Br())
     return html.Div(children=contentdiv,style=sty.STYLE_KEYS)
-    
+
 def create_subDivvalues(DNamelist,icat):
 # Function that creates the sub Div values for the 'cat' number icat of DNamelist
     contentdiv=[]
@@ -51,7 +54,7 @@ def create_subDivvalues(DNamelist,icat):
             labelName = DNamelist['name']+k
             if DNamelist['keys'][k]['type'] == 'Input':
                 contentdiv.append(dbc.Input(type="number", min=DNamelist['keys'][k]['min'], max=DNamelist['keys'][k]['max'], 
-                style={'width':'18%','font-size':'9pt'}, value=DNamelist['keys'][k]['def'], id=labelName+'-sel'))
+                style={'width':'60pt','font-size':'9pt'}, value=DNamelist['keys'][k]['def'], id=labelName+'-sel'))
             elif DNamelist['keys'][k]['type'] == 'L':
                 contentdiv.append(create_Lgrp(labelName+'-sel',DNamelist['keys'][k]['def']))
             elif DNamelist['keys'][k]['type'] == 'C':
@@ -62,13 +65,13 @@ def create_subDivvalues(DNamelist,icat):
     return html.Div(children=contentdiv)
 
 def create_KeyValuesDiv(DNamelist):
-# Function that creates the main Div keys + values
-
+    # Function that creates the main Div keys + values
+    
     # Creates first keys divs and values divs à la volée and save it to Options dict
     for n,div in enumerate(DNamelist['divName']):
         DNamelist['divskeys'][div] = create_subDiv(DNamelist, n)
         DNamelist['divsvalues'][div] = create_subDivvalues(DNamelist, n)
-
+    
     # Loop on each key-values divs pairs
     contentdiv=[html.H5('&'+DNamelist['name'].replace('\_','_'),style=sty.TEXT_STYLE),]
     for n,div in enumerate(DNamelist['divName']):
@@ -81,16 +84,16 @@ def create_KeyValuesDiv(DNamelist):
     return html.Div(children=collapse_general, style=sty.STYLE_NAMELIST)
 
 #Automatisation :
-#2) valeur par défaut : lire default_desfmn.f90
 #3) valeur possible pour les chaines de caractères : lire les appels à TEST_NAM_VAR dans read_exsegn
-#4) la fonction d'automatisation a en option : la possibilité d'exclure certaines namelists
 #5) coder une fonction qui trie les clé namelist dans Options par ordre alphabétique à la fin
 #6) Ajouter le ou les sous-programme associés à chaque namelist
 
 # Get the full options dict
+print("Get the full options dict")
 Options = opt.create_options()
 
 # Create key-values namelist divs list
+print("Create key-values namelist divs list")
 all_namelistdivs = []
 for opt in Options.keys():
 	Options[opt]['mainDiv'] = create_KeyValuesDiv(Options[opt])
@@ -110,10 +113,10 @@ sidebar_content = []
 sidebar_content.append(html.H2('Namelist groups', style=sty.TEXT_STYLE))
 sidebar_content.append(html.Hr())
 for nam in Options.keys():
-	sidebar_content.append(html.H4('&NAM_'+nam, style=sty.TEXT_STYLE, id=Options[nam]['buttonName'][0]+'-button'))
+    sidebar_content.append(html.H4('&NAM_'+nam, style=sty.TEXT_STYLE, id=Options[nam]['buttonName'][0]+'-button'))
 sidebar = html.Div(sidebar_content, style=sty.SIDEBAR_STYLE)
 
-# Upper static div
+# Upper static div (Keys - Users guide texts)
 LineTopStatic = html.Div([
     html.Div(children=[
     html.H4('Keys',style=sty.TEXT_STYLE),
@@ -126,20 +129,98 @@ LineTopStatic = html.Div([
     ],
     style=sty.CONTENT_STYLE)
 
+# Upper row dates and START!
+SimulationTimeandStart = html.Div([
+    html.Div(children=[
+    dcc.DatePickerRange(
+        id='my-date-picker-range',
+        min_date_allowed=dt.date(2015, 1, 1),
+        max_date_allowed=dt.date.today(),
+        initial_visible_month=dt.date.today()-dt.timedelta(days=5),
+        end_date=dt.date.today()
+    )
+    ],style={'padding': 10, 'flex': 1}),
+    html.Div(children=[
+      dbc.Button(
+            'Start Méso-NH simulation',color="primary", outline=True,className='me-1',size='lg',
+            id='button'),
+      dcc.Loading(
+        id="loading-1",
+        type="default",
+        children=html.Div(id="loading-output-1")),
+      html.Div(id='my-output')],
+    style={'padding': 10, 'flex': 2}),
+       
+    ],
+    style=sty.CONTENT_STYLE)
+
+
 generalContent = html.Div(children=[col_allNamelists,col_doc],className='row')
-supercontent = html.Div(children=[LineTopStatic,generalContent], style={'width':'100%'})
+supercontent = html.Div(children=[SimulationTimeandStart,LineTopStatic,generalContent], style={'width':'100%'})
 
 # Layout Master
+print("Layout Master done")
 app = Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.layout = html.Div(children=[sidebar,supercontent],className='row')
 
 inputs=[]
 suffix_label='labdoc'
 # Create the list of Inputs for all labels
+print("Create the list of Inputs for all labels")
 for nam in Options.keys():
     for keys in Options[nam]['keys'].keys():
         name_label=Options[nam]['name']+keys
         inputs.append(Input(name_label+suffix_label,'n_clicks'))
+
+user_params = {} # A remplir avec les options TODO
+# Callback du boutton de lancement de la simulation
+@app.callback(Output('my-output', 'children'), Input('button', 'n_clicks'),)
+def simu(n_clicks):
+    global user_params
+    if n_clicks is not None and n_clicks == 1:
+        user_params["id"] = shortuuid.uuid()[:4]
+        content = [html.H5([html.Span('Simulation '), 
+                   html.Span(user_params["id"], style={"font-weight": "bold"}),
+                   html.Span(' is running...'),
+                   html.Br(), html.Span('Save the ID !')])]
+        return content
+    elif n_clicks is not None:
+        content = [html.H5([html.Span('Simulation '), 
+                   html.Span(user_params["id"], style={"font-weight": "bold"}),
+                   html.Span(' is running...'),
+                   html.Br(), html.Span('Save the ID !')])]
+        return content
+    else:
+        return None
+
+# Callback de l'attente de la simulation et du lancement du backend (mesonh.py)
+@app.callback(Output('loading-1', 'children'), [Input('button', 'n_clicks'),
+                                                Input('my-date-picker-range', 'start_date'),
+                                                Input('my-date-picker-range', 'end_date')], inputs)
+def loader_func(n_clicks, start_date, end_date, *arg):
+    if start_date is not None: #First call of the app
+        time.sleep(1)
+        start_date = dt.date.fromisoformat(start_date)
+        end_date = dt.date.fromisoformat(end_date)
+        #for i, var in enumerate(dico_vars_mesonh):
+        #    user_params[var] = arg[i]
+       
+        #if n_clicks is not None and n_clicks == 1:
+        #    nb_jour = (end_date - start_date).days
+        #    for i in range(nb_jour + 1):
+        #        date_run = start_date + timedelta(days=i)
+        #        today_str = date_run.strftime('%Y-%m-%dT00:00:00')
+        #        # print(start_date)
+        #        mesonh.MesoNH(
+        #            date_run=today_str,
+        #            model_couplage="AROME",
+        #            type_forcage="MODEL",
+        #            user_params=user_params)
+        
+        #    return html.H2('Simulation terminée !')
+        #else:
+        #    return None
+    return None
 
 # Callback qui actualise la documentation (container-userguide)
 @app.callback(

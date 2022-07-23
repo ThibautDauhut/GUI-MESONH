@@ -4,7 +4,7 @@ Options_init = {
 #            - 'name' is the latex user's guide convention with \_
 #            - len(buttonName) must be == len(divName) + 1 (with the first button = the general id button name for the sidebar
 #            - empty name for buttonName is possible
-'TURBn': {'name': 'NAM\_TURBn',
+'TURBn': {'name': 'NAM\_TURBn', 'model': 'mesonh',
         'catName': ['Général','Subgrid condensation','Online diagnostics'],
         'buttonName': ['NAMTURBn','NAMTURBngeneral','NAMTURBnsbg','NAMTURBndiag'],
         'divName': ['NAMTURBngeneral','NAMTURBnsbg','NAMTURBndiag'],
@@ -47,7 +47,7 @@ Options_init = {
                 'LTURB_DIAG':{'type':'L', 'def': 'False', 'cat': 2},
                 }
         },
-'PARAMn': {'name': 'NAM\_PARAMn',
+'PARAMn': {'name': 'NAM\_PARAMn', 'model': 'mesonh',
 	   'catName': [''],
 	   'buttonName': ['NAMPARAMn','NAMPARAMngeneral'],
 	   'divName': ['NAMPARAMngeneral'],
@@ -62,7 +62,7 @@ Options_init = {
                                         {"label": "FIXE", "value": "FIXE"},
                                         {"label": "ECMW", "value": "ECMW"},
                                         {"label": "ECRAD", "value": "ECRAD"}]},
-                'CCLOUD':{'type':'C','def':'ICE3', 'cat': 0,
+                'CCLOUD':{'type':'C','def':'NONE', 'cat': 0,
                             'options': [{"label": "NONE", "value": "NONE"},
                                         {"label": "REVE", "value": "REVE"},
                                         {"label": "KESS", "value": "KESS"},
@@ -102,7 +102,73 @@ def get_all_namelists():
 		f90files_SURFEX.append(i[:i.index('.F90') + 4])
 		namelists_SURFEX.append(lookfor_namelist_name(i))
 	return namelists_MNH,f90files_MNH,namelists_SURFEX,f90files_SURFEX
-	
+
+def get_default_inf90(options,nam,key):
+	fin = open('MNH/default_desfmn.f90', 'r')
+	contentbyline = fin.readlines()
+	contentbyline_afterheader = contentbyline[330:]
+	keyegal = key + '='
+	val = ''
+	print(keyegal)
+	for i in contentbyline_afterheader:
+		i=i.replace(' ','')
+		if keyegal == i[:len(keyegal)]:
+			try:
+				lookforcommentary = i.index('!')
+				val = i[len(keyegal):lookforcommentary]
+			except(ValueError):
+				val = i[len(keyegal):]
+			#Control on val
+			if 'FALSE' in val:
+				val = 'False'
+			elif 'TRUE' in val:
+				val = 'True'
+			elif '\'' in val: # String found
+				val = val
+			else:
+				try: # if number (real or int)
+					val = float(val)
+				except:
+					pass
+			break
+	# If not found in default_desfmn, look into f90file of namelist definition
+	if val == '':
+		print(key + ' not found, look into from90 = ',options[nam]['fromf90'])
+		fin = open('MNH/'+options[nam]['fromf90'], 'r')
+		contentbyline = fin.readlines()
+		for i in contentbyline:
+			i=i.replace(' ','')
+			if keyegal == i[:len(keyegal)]:
+				try:
+					lookforcommentary = i.index('!')
+					val = i[len(keyegal):lookforcommentary]
+				except(ValueError):
+					val = i[len(keyegal):]
+				#Control on val
+				if 'FALSE' in val:
+					val = 'False'
+				elif 'TRUE' in val:
+					val = 'True'
+				elif '\'' in val: # String found
+					val = val
+				else:
+					try: # if number (real or int)
+						val = float(val)
+					except:
+						pass
+				break	
+	return val
+
+def get_default_values(options):
+	for nam in options.keys():
+        	for k in options[nam]['keys']:
+        		if options[nam]['keys'][k]['def'] == '': # if the default value is not already filled, fill in it
+        			if options[nam]['model'] == 'mesonh':
+        				options[nam]['keys'][k]['def'] = get_default_inf90(options,nam,k)
+        			else: #surfex, TODO
+        				break
+	return options
+
 def get_keys_types(options):
 	for nam in options.keys():
         	for k in options[nam]['keys']:
@@ -189,14 +255,27 @@ def create_options():
 	Options = Options_init
 	
 	# Get all namelists names and fill the dict
+	print("Get all namelists names and fill the dict")
 	namelists_MNH, f90files_MNH, namelists_SURFEX, f90files_SURFEX = get_all_namelists()
 	Options = init_all_options(Options, [namelists_MNH, namelists_SURFEX] , [f90files_MNH, f90files_SURFEX])
 	
-	# Get all keys for all namelists
+	# Set all keys for all namelists
+	print("Set all keys for all namelists")
 	Options = get_all_keys(Options)
 
+	# Get Default values
+	print("Get Default values")
+	Options = get_default_values(Options)
+	
 	# Get possible values for strings keys
 	
-	# After all keys were written
+	# Set keys types
+	print("Set keys types")
 	Options = get_keys_types(Options)
-	return Options
+	
+	# Selection of specific namelist (for testing)
+	Namelists_toshow = ('PARAMn','TURBn','PARAM_LIMA','PARAM_ICE','PARAM_RADn','PARAM_ECRADn',
+	'PARAM_C2R2','PARAM_MFSHALLn')
+	Options_selected = {k:Options[k] for k in Namelists_toshow if k in Options}
+	#Options_selected = Options
+	return Options_selected

@@ -29,6 +29,17 @@ TEXT_STYLE = {
     'textAlign': 'center',
     'color': '#191970',
 }
+START_BUTTON = {
+  'width': '250px',
+  'height': '30px',
+  'cursor': 'pointer',
+  'border': '0px',
+  'border-radius': '5px',
+  'background-color': 'black',
+  'color': 'white',
+  'text-transform': 'uppercase',
+  'font-size': '15px'
+}
 STYLE1={
 	'display': 'flex',
     	'flex-direction': 'row',	 
