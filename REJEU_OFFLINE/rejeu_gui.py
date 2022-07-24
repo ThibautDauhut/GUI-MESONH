@@ -8,6 +8,28 @@ import datetime as dt
 import time
 import shortuuid
 
+def fill_user_params(userparam, options):
+    userkey,uservalue=[],[]
+    for nam in options.keys():
+        for key in options[nam]['keys'].keys():
+            userkey.append(key)
+        for divs in options[nam]['divsvalues'].keys():
+            for key_obj in options[nam]['divsvalues'][divs].children:
+                if 'dash_bootstrap' in str(type(key_obj)): #Filter html objects
+                    if 'Input' in str(type(key_obj)):
+                        uservalue.append(key_obj.value)
+                    else: # Boolean, String are embedded in a container (list of size 1)
+                        uservalue.append(key_obj.children[0].value)
+    
+    # remove \n in strings value and extra-quotes + fill the Dic
+    for i,val in enumerate(uservalue):
+        if 'str' in str(type(val)):
+            uservalue[i] = uservalue[i].replace('\n','')
+            uservalue[i] = uservalue[i].replace('\'','')
+        userparam[userkey[i]] = uservalue[i]
+    return userparam
+        
+        
 def create_Cgrp(options, idname, defaultvalue):
     group =  dbc.Container(
             [dbc.RadioItems(
@@ -199,6 +221,9 @@ def simu(n_clicks):
                                                 Input('my-date-picker-range', 'end_date')], inputs)
 def loader_func(n_clicks, start_date, end_date, *arg):
     if start_date is not None: #First call of the app
+        # Fill the user_params sent to mesonh.py by the key-value in Options
+    	user_params = fill_user_params(user_params,Options)
+    	
         time.sleep(1)
         start_date = dt.date.fromisoformat(start_date)
         end_date = dt.date.fromisoformat(end_date)
