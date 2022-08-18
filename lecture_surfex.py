@@ -122,8 +122,6 @@ def surfex_user(start_day, end_day, id_user, params):
                     data_surfex_user[today_str]['timeFlux'] = timeFlux
                     for param in params:
                     
-                        print("PARAM SURFEX : ", param)
-                        print("id_user : ", id_user, " pour le jour ", today)
                         if param not in data_surfex_user[today_str]:
                             data_surfex_user[today_str][param] = {}
                             if param == "tmp_2m":
@@ -151,11 +149,11 @@ def surfex_user(start_day, end_day, id_user, params):
                             if param == "t-1":
                                 data_surfex_user[today_str][param] = f['TG1_ISBA'][:,0, 0].data[:24] - 273.15
                             if param == "hu_couche1":
-                                data_surfex_user[today_str][param] = f['WG1_ISBA'][:,0, 0].data[:24]
+                                data_surfex_user[today_str][param] = f['WG1'][:,0, 0].data[:24]
                             if param == "hu_couche2":
-                                data_surfex_user[today_str][param] = f['WG2_ISBA'][:,0, 0].data[:24]
+                                data_surfex_user[today_str][param] = f['WG2'][:,0, 0].data[:24]
                             if param == "hu_couche3":
-                                data_surfex_user[today_str][param] = f['WG3_ISBA'][:,0, 0].data[:24]                                
+                                data_surfex_user[today_str][param] = f['WG3'][:,0, 0].data[:24]                                
             except FileNotFoundError:
                 pass
                 
@@ -178,8 +176,6 @@ def surfex_user(start_day, end_day, id_user, params):
                     data_surfex_user[today_str]['timeFlux'] = time
                     for param in params:
                     
-                        print("PARAM SURFEX : ", param)
-                        print("id_user : ", id_user, " pour le jour ", today)
                         if param not in data_surfex_user[today_str]:
                             data_surfex_user[today_str][param] = {}
                             if param == "tmp_2m":

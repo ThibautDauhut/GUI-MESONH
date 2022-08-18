@@ -31,6 +31,8 @@ import glob
 
 # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/web_20210402/'
 path = '/home/manip/MeteopoleX/models/MNH-V5-5-0/MY_RUN/OPER/'
+# in case of offline work, need to link to /USER/
+#path = '/home/manip/MeteopoleX/models/MNH-V5-5-0/MY_RUN/USER/'
 # '/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/'
 path_output = '/home/manip/MeteopoleX/models/runs/OUTPUT/MESONH/'
 
@@ -169,9 +171,10 @@ class MesoNH:
             Dvar = {}
             for var in variables:
                 Dvar[var] = f.readfield(var).getvalue_ll(1.3744755, 43.5728090)
-            WG1 = Dvar['X001WG1']
-            WG2 = Dvar['X001WG2']
-            WG3 = Dvar['X001WG3']
+            # Conversion m3/m3 to SWI (WG - Wfc)* (Wilt -Wfc) : Wfc and Wilt is site dependent
+            WG1 = (Dvar['X001WG1']-0.10)*2.5
+            WG2 = (Dvar['X001WG2']-0.09)*3.333
+            WG3 = (Dvar['X001WG3']-0.08)*3.334
             f.close()
             print('Les paramètres du sol issus du modèle ont pu être utilisés, chouette !')
         except BaseException:
@@ -431,6 +434,7 @@ class MesoNH:
                 #now = now + timedelta(minutes=30)
             new_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
             #new_date = now.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
+            print(self.get_initialize_file(self.model_couplage, new_date))
             while(not os.path.exists(self.get_initialize_file(self.model_couplage, new_date))):
                 new_date = new_date - timedelta(days=1)
             print('Date de run utilisée : ' + str(new_date))
@@ -886,16 +890,17 @@ class MesoNH:
 
 def three_months():
     # DATE DE DEPART DU RUN
-    date_depart = datetime.fromisoformat('2021-10-25T00:00:00')
+    date_depart = datetime.fromisoformat('2021-12-01T00:00:00')
 
 # NOMBRE DE JOURS A PARTIR DE LA DATE DE DEPART ????
-    for i in range(68):
+    for i in range(0,90):
 
         date_run = date_depart + timedelta(days=i)
-        for model in ['AROME', 'ARPEGE']:
-            # for model in ['AROME']:
+        #for model in ['AROME', 'ARPEGE']:
+        for model in ['AROME']:
             try:
                 MesoNH(date_run=str(date_run), model_couplage=model)
+                #MesoNH(model_couplage=model, date_run=str(date_run), user_params={"id": "LIMA"+str(i), "CCLOUD": "LIMA", "CTURB": "TKEL", "CRAD":"ECMW"})
             except BaseException:
                 print('Le modèle du ' + str(date_run) + ' ' + model + ' n\' a pas pu être lancé')
         # try:

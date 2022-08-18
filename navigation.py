@@ -118,7 +118,7 @@ CONTENT_STYLE = {
 
 
 today = datetime.date.today()
-# today=datetime.date.today()-timedelta(days=2)
+#today=datetime.date.today()-timedelta(days=15)
 yesterday = today - timedelta(days=1)
 #end_day = today - timedelta(days=1)
 #start_day = today - timedelta(days=7)
@@ -385,7 +385,7 @@ def selection_donnees(start_day, end_day):
 
 
 today = datetime.date.today()
-# today=datetime.date.today()-timedelta(days=2)
+#today=datetime.date.today()-timedelta(days=15)
 tomorow = today + timedelta(days=1)
 yesterday = today - timedelta(days=1)
 end_day = today
@@ -543,6 +543,8 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
             date_run = start_day + datetime.timedelta(days=i)
             today_str = date_run.strftime('%Y%m%d')
             
+            # TODO Ce bidouillage pour afficher qu'une légende empêche de cacher/afficher les courbes
+            # sur la période affichée 
             if id_user not in courbe_affichee and 'tmp_2m' in data_user[today_str]: 
             #and isinstance(data_user[today_str]['tmp_2m'], (list, np.ndarray)):
                courbe_affichee.append(id_user)
@@ -1650,7 +1652,7 @@ def biais_moyen(start_day, end_day):
 
                        # Nom des colonnes du DF
                        colname = str(param + '_' + model + '_' + reseau)
-
+                       
                        try:
                            dico_loc = {colname: list(biais[param][model][reseau]['values'])}
                            df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
@@ -1703,7 +1705,11 @@ def biais_moyen(start_day, end_day):
     DF[cols] = DF[cols].astype('float')
 
     # Dataframe regroupé par heures
-    DF_CyDi = DF.groupby(DF.index.hour).mean()
+    try: #If missing data at first call 
+       DF_CyDi = DF.groupby(DF.index.hour).mean()
+    except:
+       DF_CyDi = pd.DataFrame(DF, index=DF.index)
+
 
     # Création du dictionnaire associé aux biais moyens + graphes html
     chartM = {}
@@ -1828,6 +1834,7 @@ def update_lineM(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
 
     biais_moy, chartM, graphM = biais_moyen(start_day, end_day)
 
+       
     # Puis, mise à jour des graphes :
 
     for param in params:
@@ -2020,7 +2027,7 @@ def update_lineM(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
     for param in params:
 
         chartM[param].update_layout(height=450, width=800,
-                                    xaxis_title="Heure de la journéee",
+                                    xaxis_title="Heure de la journée",
                                     yaxis_title=str(dico_params[param]['unit']),
                                     title=dico_params[param]['title'])
 
