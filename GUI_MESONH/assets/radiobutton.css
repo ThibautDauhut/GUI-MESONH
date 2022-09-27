@@ -1,0 +1,58 @@
+/* restyle radio items */
+.custom-control-label::after,
+.custom-control-label::before {
+  display: none;
+}
+
+.custom-control {
+  padding-left: 0px;
+}
+
+.custom-control-inline {
+  margin-right: 0;
+}
+
+.date-group-labels {
+  border: 0px solid #ccc;
+  border-radius: 0px;
+  font: 14px apple-system, sans-serif;
+  padding: 7px 18px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+}
+
+.date-group-labels.date-group-labels-checked {
+  background-color: #ececf6;
+  box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.custom-radio:first-child .date-group-labels {
+  border-radius: 3px 0 0 3px;
+}
+
+.custom-radio:last-child .date-group-labels {
+  border-radius: 0 3px 3px 0;
+}
+
+.custom-radio:not(:last-child) .date-group-labels {
+  border-right: none;
+}
+
+.date-group-labels:hover {
+  background-color:#ececf6;
+  box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.date-group-labels-TrueFalse {
+  border: 1px solid #ccc;
+  border-radius: 0px;
+  font: bold 11px Roboto, sans-serif;
+  padding: 6px 7px;
+  background-color: #28a745;
+  cursor: pointer;
+}
+.date-group-labels-TrueFalse.date-group-labels-checked {
+  background-color: #28a745;
+  box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
