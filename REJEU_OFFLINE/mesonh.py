@@ -15,7 +15,7 @@ import sys
 #os.system('source /home/manip/.bashrc')
 #PathWork = '/home/manip/MeteopoleX/Site_web_dev/'
 #sys.path.insert(0, PathWork)
-import read_aida
+#import read_aida
 
 
 import numpy as np
@@ -104,12 +104,12 @@ class MesoNH:
         self.date_run = self.create_datetime_run(date_run)
 
         # Petite vérification que le modèle n'ait pas déjà tourné sur ce run
-        self.check_run_already_exists()
+        #self.check_run_already_exists()
 
         # On récupère le fichier de couplage puis on stocke son contenu
         # dans un dataset (netCDF)
-        file = self.get_initialize_file(model_couplage, self.date_run)
-        self.coupl_data = nc.Dataset(file)
+        #file = self.get_initialize_file(model_couplage, self.date_run)
+        #self.coupl_data = nc.Dataset(file)
 
         ##########################
         # ETAPES DE MODELISATION #
@@ -119,19 +119,19 @@ class MesoNH:
         self._parametrize()
 
         # 2) Couplage avec le modèle
-        self._couplage()
+        #self._couplage()
 
         # 3) Intégration
-        self._run()
+        #self._run()
 
         # 4) Diagnostique
-        self._diag()
+        #self._diag()
 
         # 5) Transformation puis transmission des fichiers vers path_output
-        self._concat_rename()
+        #self._concat_rename()
 
         # 6) Suppression des fichiers indésirables, nettoyage du dossier path
-        self._clean()
+        #self._clean()
 
     def _parametrize(self):
         """
@@ -148,79 +148,6 @@ class MesoNH:
         Le forçage par les données d'observation se fait aussi ici.
         """
 
-        # Paramétrisation de la namelist PRE_IDEA1
-        with open(path + 'bases_nam/PRE_IDEA1.nam', 'r') as f:
-            namelist = f.read()
-
-        try:
-            import epygram
-            epygram.init_env()
-            date_epygram = self.date_run.strftime('%Y%m%d')
-            yyyymm_epy = self.date_run.strftime('%Y%m')
-            f = epygram.formats.resource(
-                '/cnrm/ktrm/manip/METEOPOLEX/AROME/Toulouse/' +
-                yyyymm_epy +
-                '/historic.surfex.tlse-1300m000+0000:00_' +
-                date_epygram +
-                '.fa',
-                'r')
-#            f = epygram.formats.resource('/cnrm/phynh/data1/rodierq/LEO/' + yyyymm_epy + '/historic.surfex.tlse-1300m000+0000:00_'+date_epygram+'.fa', 'r')
-            variables = ['X001WG1', 'X001WG2', 'X001WG3', 'X001WGI1', 'X001WGI2']
-            Dvar = {}
-            for var in variables:
-                Dvar[var] = f.readfield(var).getvalue_ll(1.3744755, 43.5728090)
-            WG1 = Dvar['X001WG1']
-            WG2 = Dvar['X001WG2']
-            WG3 = Dvar['X001WG3']
-            f.close()
-            print('Les paramètres du sol issus du modèle ont pu être utilisés, chouette !')
-        except BaseException:
-            print('Utilisation des paramètres du sol par défaut')
-            WG1 = self.trunc(self.coupl_data['q'][0][-1])
-            WG2 = 2.5562e-01
-            WG3 = WG2
-
-        if self.type_forcage == 'OBS':
-            CSEA = "'FLUX'"
-            CNATURE = "'NONE'"
-            XUNIF_COVERS = "XUNIF_COVER(1)=1"
-            XUNIF_SEA = 1.
-            XUNIF_NATURE = 0.
-        else:
-            CNATURE = "'ISBA'"
-            CSEA = "'NONE'"
-            XUNIF_COVERS = "XUNIF_COVER(361)=0.5, XUNIF_COVER(456)=0.5"
-            XUNIF_SEA = 0.
-            XUNIF_NATURE = 1.
-
-        li_params_pre_idea1 = {
-            "CSEA": CSEA,
-            "CNATURE": CNATURE,
-            "XUNIF_COVERS": XUNIF_COVERS,
-            "XUNIF_SEA": XUNIF_SEA,
-            "XUNIF_NATURE": XUNIF_NATURE,
-            "NYEAR": self.date_run.strftime("%Y"),
-            "NMONTH": self.date_run.strftime("%m"),
-            "NDAY": self.date_run.strftime("%d"),
-            "XTIME": float(self.date_run.strftime("%H")) * 3600.,
-            "XHUG_SURF": WG1,
-            "XHUG_ROOT": WG2,
-            "XHUG_DEEP": WG3,
-            "XTG_SURF": self.trunc(self.coupl_data['t'][0][-1]),
-            "XTG_ROOT": self.trunc(self.coupl_data['t_soil'][0][0]),
-            "XTG_DEEP": self.trunc(self.coupl_data['t_soil'][0][0]),
-            "NYEAR2": self.date_run.strftime("%Y"),
-            "NMONTH2": self.date_run.strftime("%m"),
-            "NDAY2": self.date_run.strftime("%d"),
-            "XTIME2": float(self.date_run.strftime("%H")) * 3600.
-        }
-
-        for param in li_params_pre_idea1:
-            namelist = namelist.replace("{" + param + "}", str(li_params_pre_idea1[param]))
-
-        with open(self.path + 'PRE_IDEA1.nam', 'w') as f:
-            f.write(namelist)
-
         # Paramétrisation de la namelist EXSEG1
         namelist = ""
 
@@ -229,7 +156,7 @@ class MesoNH:
         else:
             exsegfile = "OPER"
 
-        with open(path + 'bases_nam/EXSEG1_' + exsegfile + '.nam', 'r') as f:
+        with open('EXSEG1' + '.nam', 'r') as f:
             namelist += f.read()
 
         for namelistgroup in self.user_params:
@@ -245,7 +172,7 @@ class MesoNH:
             namelist += self.create_NAM_IDEAL_FLUX()
             namelist += "\n"
 
-        with open(self.path + 'EXSEG1.nam', 'w') as f:
+        with open('EXSEG1.nam', 'w') as f:
             f.write(namelist)
 
     def _couplage(self):
@@ -507,7 +434,7 @@ class MesoNH:
                 rejeu = False
                 dos = 'OPER/'
                 self.path += shortuuid.uuid()[:8] + '/'
-            os.mkdir(self.path)
+           # os.mkdir(self.path)
             self.path_output += dos
             return rejeu, user_params
         else:
