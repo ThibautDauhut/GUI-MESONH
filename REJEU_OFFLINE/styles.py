@@ -1,12 +1,13 @@
 SIDEBAR_STYLE = {
     'position': 'fixed',
     'top': 0,
-    'left': 0,
+    'left': '0',
     'bottom': 0,
     'width': '15%',
     'padding': '20px 10px',
     'background-color': '#f8f9fa',
-    'border': '0px solid black'
+    'border': '0px solid black',
+    'overflow': 'scroll'
 }
 # User's guide column style
 DOC_STYLE = {
@@ -27,6 +28,17 @@ CONTENT_STYLE = {
 TEXT_STYLE = {
     'textAlign': 'center',
     'color': '#191970',
+}
+START_BUTTON = {
+  'width': '250px',
+  'height': '30px',
+  'cursor': 'pointer',
+  'border': '0px',
+  'border-radius': '5px',
+  'background-color': 'black',
+  'color': 'white',
+  'text-transform': 'uppercase',
+  'font-size': '15px'
 }
 STYLE1={
 	'display': 'flex',
