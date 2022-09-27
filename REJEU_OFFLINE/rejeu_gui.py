@@ -8,25 +8,30 @@ import datetime as dt
 import time
 import shortuuid
 
-def fill_user_params(userparam, options):
-    userkey,uservalue=[],[]
+def fill_user_params(options):
+    userparam = {}
     for nam in options.keys():
-        for key in options[nam]['keys'].keys():
-            userkey.append(key)
+        userparam[nam] = {}
+        NAMname = options[nam]['name'].replace('\\','') #Namelist name with _
         for divs in options[nam]['divsvalues'].keys():
             for key_obj in options[nam]['divsvalues'][divs].children:
                 if 'dash_bootstrap' in str(type(key_obj)): #Filter html objects
                     if 'Input' in str(type(key_obj)):
-                        uservalue.append(key_obj.value)
+                        key_name = key_obj.id.replace('-sel','')
+                        key_name = key_name.replace('\\','')
+                        key_name = key_name.replace(NAMname,'')
+                        val = key_obj.value
+                        
                     else: # Boolean, String are embedded in a container (list of size 1)
-                        uservalue.append(key_obj.children[0].value)
-    
-    # remove \n in strings value and extra-quotes + fill the Dic
-    for i,val in enumerate(uservalue):
-        if 'str' in str(type(val)):
-            uservalue[i] = uservalue[i].replace('\n','')
-            uservalue[i] = uservalue[i].replace('\'','')
-        userparam[userkey[i]] = uservalue[i]
+                        key_name = key_obj.children[0].id.replace('-sel','')
+                        key_name = key_name.replace('\\','')
+                        key_name = key_name.replace(NAMname,'')
+                        val = key_obj.children[0].value
+                userparam[nam][key_name] = val
+                # remove \n in strings value and extra-quotes          
+                if 'str' in str(type(userparam[nam][key_name])):
+                    userparam[nam][key_name] = userparam[nam][key_name].replace('\n','')
+                    userparam[nam][key_name] = userparam[nam][key_name].replace('\'','')
     return userparam
         
         
@@ -121,7 +126,7 @@ for opt in Options.keys():
 	Options[opt]['mainDiv'] = create_KeyValuesDiv(Options[opt])
 	all_namelistdivs.append(Options[opt]['mainDiv'])
 
-# Particular settings
+# Particular divs settings
 Options['PARAMn']['divskeys']['NAMPARAMngeneral'].children.insert(5,html.Br())
 
 # Keys-value div
@@ -181,107 +186,117 @@ generalContent = html.Div(children=[col_allNamelists,col_doc],className='row')
 supercontent = html.Div(children=[SimulationTimeandStart,LineTopStatic,generalContent], style={'width':'100%'})
 
 # Layout Master
+layout_mesonh_gui = html.Div(children=[sidebar,supercontent],className='row')
 print("Layout Master done")
-app = Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
-app.layout = html.Div(children=[sidebar,supercontent],className='row')
 
-inputs=[]
-suffix_label='labdoc'
-# Create the list of Inputs for all labels
-print("Create the list of Inputs for all labels")
-for nam in Options.keys():
-    for keys in Options[nam]['keys'].keys():
-        name_label=Options[nam]['name']+keys
-        inputs.append(Input(name_label+suffix_label,'n_clicks'))
-
+# Init
 user_params = {} # A remplir avec les options TODO
-# Callback du boutton de lancement de la simulation
-@app.callback(Output('my-output', 'children'), Input('button', 'n_clicks'),)
-def simu(n_clicks):
-    global user_params
-    if n_clicks is not None and n_clicks == 1:
-        user_params["id"] = shortuuid.uuid()[:4]
-        content = [html.H5([html.Span('Simulation '), 
-                   html.Span(user_params["id"], style={"font-weight": "bold"}),
-                   html.Span(' is running...'),
-                   html.Br(), html.Span('Save the ID !')])]
-        return content
-    elif n_clicks is not None:
-        content = [html.H5([html.Span('Simulation '), 
-                   html.Span(user_params["id"], style={"font-weight": "bold"}),
-                   html.Span(' is running...'),
-                   html.Br(), html.Span('Save the ID !')])]
-        return content
-    else:
-        return None
-
-# Callback de l'attente de la simulation et du lancement du backend (mesonh.py)
-@app.callback(Output('loading-1', 'children'), [Input('button', 'n_clicks'),
-                                                Input('my-date-picker-range', 'start_date'),
-                                                Input('my-date-picker-range', 'end_date')], inputs)
-def loader_func(n_clicks, start_date, end_date, *arg):
-    if start_date is not None: #First call of the app
-        # Fill the user_params sent to mesonh.py by the key-value in Options
-    	user_params = fill_user_params(user_params,Options)
-    	
-        time.sleep(1)
-        start_date = dt.date.fromisoformat(start_date)
-        end_date = dt.date.fromisoformat(end_date)
-        #for i, var in enumerate(dico_vars_mesonh):
-        #    user_params[var] = arg[i]
-       
-        #if n_clicks is not None and n_clicks == 1:
-        #    nb_jour = (end_date - start_date).days
-        #    for i in range(nb_jour + 1):
-        #        date_run = start_date + timedelta(days=i)
-        #        today_str = date_run.strftime('%Y-%m-%dT00:00:00')
-        #        # print(start_date)
-        #        mesonh.MesoNH(
-        #            date_run=today_str,
-        #            model_couplage="AROME",
-        #            type_forcage="MODEL",
-        #            user_params=user_params)
-        
-        #    return html.H2('Simulation terminée !')
-        #else:
-        #    return None
-    return None
-
-# Callback qui actualise la documentation (container-userguide)
-@app.callback(
-    Output('container-userguide', 'children'),
-    inputs)
-def displayClick(*args):
-    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
-    #changed_id is a key name + 'labdoc.' + 'n_clicks'
-    size_to_remove = len('labdoc') + 1 + len('n_clicks')
-    key_triggered = changed_id[:-size_to_remove]
-    msg=''
-    for nam in Options.keys():
-        for keys in Options[nam]['keys'].keys():
-             name_label = Options[nam]['name']+keys
-             if name_label == key_triggered:
-                 msg = KEYdoc('simulation.tex',Options[nam]['name'],keys.replace('_','\_'))
-                 break
-    return html.Div(msg)
-
-# Callback des boutons afficher/cacher les options en namelist
-def ButtonNam(nameid):
-	@app.callback(
-    	Output(nameid, "is_open"),
-    	Input(nameid+'-button', "n_clicks"),
-    	State(nameid, "is_open"))
-    	# Fonction associée au callbak qui change le statut du bouton
-	def toggle_collapse(n, is_open):
-    		if n:
-        		return not is_open
-    		return is_open
-
-# Create callbacks for hide/show buttons
-for nam in Options.keys():
-        for b in Options[nam]['buttonName']:
-        	if b != '': # empty buttonName is possible
-        		ButtonNam(b)
+print(Options['PARAM_KAFRn']['keys'])
+def start_callbacks():
+  inputs=[]
+  suffix_label='labdoc'
+  # Create the list of Inputs for all labels
+  print("Create the list of Inputs for all labels")
+  for nam in Options.keys():
+      for keys in Options[nam]['keys'].keys():
+          name_label=Options[nam]['name']+keys
+          inputs.append(Input(name_label+suffix_label,'n_clicks'))
+  
+  # Callback du boutton de lancement de la simulation
+  @app.callback(Output('my-output', 'children'), Input('button', 'n_clicks'),)
+  def simu(n_clicks):
+      global user_params
+      if n_clicks is not None and n_clicks == 1:
+          user_params["id"] = shortuuid.uuid()[:4]
+          content = [html.H5([html.Span('Simulation '), 
+                     html.Span(user_params["id"], style={"font-weight": "bold"}),
+                     html.Span(' is running...'),
+                     html.Br(), html.Span('Save the ID !')])]
+          return content
+      elif n_clicks is not None:
+          content = [html.H5([html.Span('Simulation '), 
+                     html.Span(user_params["id"], style={"font-weight": "bold"}),
+                     html.Span(' is running...'),
+                     html.Br(), html.Span('Save the ID !')])]
+          return content
+      else:
+          return None
+  
+  # Callback de l'attente de la simulation et du lancement du backend (mesonh.py)
+  @app.callback(Output('loading-1', 'children'), [Input('button', 'n_clicks'),
+                                                  Input('my-date-picker-range', 'start_date'),
+                                                  Input('my-date-picker-range', 'end_date')], inputs)
+  def loader_func(n_clicks, start_date, end_date, *arg):
+      if start_date is not None: #First call of the app
+          # Fill the user_params sent to mesonh.py by the key-value in Options
+          user_params = fill_user_params(Options)
+          print(user_params)
+          time.sleep(1)
+          start_date = dt.date.fromisoformat(start_date)
+          end_date = dt.date.fromisoformat(end_date)
+          #for i, var in enumerate(dico_vars_mesonh):
+          #    user_params[var] = arg[i]
+          print(n_clicks)
+          if n_clicks is not None and n_clicks == 1:
+              import mesonh
+              from datetime import timedelta
+              nb_jour = (end_date - start_date).days
+              print('Appel Mesonh')
+              for i in range(nb_jour + 1):
+                  print(i)
+                  date_run = start_date + timedelta(days=i)
+                  today_str = date_run.strftime('%Y-%m-%dT00:00:00')
+                  print(start_date)
+                  mesonh.MesoNH(
+                      date_run=today_str,
+                      model_couplage="AROME",
+                      type_forcage="MODEL",
+                      user_params=user_params)
+          
+          #    return html.H2('Simulation terminée !')
+          #else:
+          #    return None
+      return None
+  
+  # Callback qui actualise la documentation (container-userguide)
+  @app.callback(
+      Output('container-userguide', 'children'),
+      inputs)
+  def displayClick(*args):
+      changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+      #changed_id is a key name + 'labdoc.' + 'n_clicks'
+      size_to_remove = len('labdoc') + 1 + len('n_clicks')
+      key_triggered = changed_id[:-size_to_remove]
+      msg=''
+      for nam in Options.keys():
+          for keys in Options[nam]['keys'].keys():
+               name_label = Options[nam]['name']+keys
+               if name_label == key_triggered:
+                   msg = KEYdoc('simulation.tex',Options[nam]['name'],keys.replace('_','\_'))
+                   break
+      return html.Div(msg)
+  
+  # Callback des boutons afficher/cacher les options en namelist
+  def ButtonNam(nameid):
+      @app.callback(
+      Output(nameid, "is_open"),
+      Input(nameid+'-button', "n_clicks"),
+      State(nameid, "is_open"))
+      # Fonction associée au callbak qui change le statut du bouton
+      def toggle_collapse(n, is_open):
+          if n:
+              return not is_open
+          return is_open
+  
+  # Create callbacks for hide/show buttons
+  for nam in Options.keys():
+          for b in Options[nam]['buttonName']:
+          	if b != '': # empty buttonName is possible
+          		ButtonNam(b)
 
 if __name__ == '__main__':
+    app = Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
+    app.layout = layout_mesonh_gui
+    start_callbacks()
     app.run_server(debug=True,port='8086')
+
