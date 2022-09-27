@@ -1128,13 +1128,13 @@ def calcul_biais(start_day, end_day):
                     df_biais = df_biais.dropna()
                     df_biais.index = pd.to_datetime(df_biais.index)
 
-                    date_list = df_biais.index.strftime("%Y-%m-%d %H:%M:%S").tolist()
-
                     # Passage du dataframes "biais" en listes pour intégrations dans les
                     # dictionnaires biais
                     biais[param][model][reseau]['values'] = list(df_biais[0])
                     biais[param][model][reseau]['time'] = list(df_biais.index)
-
+                    
+            # Pour MesoNH, une simulation = 1 jour, calcul du biais par jour
+            # TODO: optimisation
             nb_jour = (end_day - start_day).days
 
             for i in range(nb_jour):
@@ -1173,7 +1173,8 @@ def calcul_biais(start_day, end_day):
                 if today_str not in biais[param][model]:
 
                     biais[param][model][today_str] = {}
-
+                
+                # Pas de calcul du biais (obs-obs)
                 if model != 'Tf':
 
                     if values_obs is not None:
@@ -1654,6 +1655,7 @@ def biais_moyen(start_day, end_day):
                        colname = str(param + '_' + model + '_' + reseau)
                        
                        try:
+                           # Concaténation des biais moyens par paramètres/modèles/réseau (ARO/ARP)
                            dico_loc = {colname: list(biais[param][model][reseau]['values'])}
                            df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
                            DF = pd.concat([DF, df_loc], axis=1)
@@ -1688,7 +1690,7 @@ def biais_moyen(start_day, end_day):
                        data_loc = {colname: list(biais[param][model][str(today_str)]['values'])}                                                                               
                        df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time']))
                        
-                       #Concaténation progressive
+                       #Concaténation progressive par jour
                        df_mnh = pd.concat([df_mnh, df_loc], axis=0)
 
                    except BaseException:
@@ -1696,7 +1698,7 @@ def biais_moyen(start_day, end_day):
                        df_mnh = pd.concat([df_mnh, df_nan], axis=0)
                        
                        pass
-
+            # Concatenation des biais moyen mesonh au DF avec les autres modèles
             DF = pd.concat([DF, df_mnh], axis=1)
 
    # Conversion colonnes type 'object' en type 'numeric'
