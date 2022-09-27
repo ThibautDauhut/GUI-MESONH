@@ -118,7 +118,7 @@ CONTENT_STYLE = {
 
 
 today = datetime.date.today()
-# today=datetime.date.today()-timedelta(days=2)
+#today=datetime.date.today()-timedelta(days=15)
 yesterday = today - timedelta(days=1)
 #end_day = today - timedelta(days=1)
 #start_day = today - timedelta(days=7)
@@ -169,6 +169,12 @@ dico_params = {
         "title": "Vitesse de friction",
         "unit": "m/s"
     },
+    "tke": {
+        "index_obs": "trb_ect_gill_tke_%1800",
+        "index_model": "",
+        "title": "Energie cinétique turbulente",
+        "unit": "m²/s²"
+        },
     "flx_chaleur_sens": {
         "index_obs": "flx_hs_tson_Chb_%1800",
         "index_model": "flx_hs",
@@ -180,14 +186,7 @@ dico_params = {
         "index_model": "flx_le",
         "title": "Flux de chaleur latente",
         "unit": "W/m²"
-    },
-    "tke": {
-        "index_obs": "trb_ect_gill_tke_%1800",
-        "index_model": "",
-        "title": "Energie cinétique turbulente",
-        "unit": "m²/s²"
-        },
-
+    },    
     "SWD": {
         "index_obs": "ray_rgd_cnr1_c2_%60_Met_%1800",
         "index_model": "ray_rgd",
@@ -198,6 +197,12 @@ dico_params = {
         "index_obs": "ray_irm_cnr1_c2_%60_Met_%1800",
         "index_model": "ray_irm",
         "title": "Rayonnement IR montant (LW)",
+        "unit": "W/m²"
+    },    
+    "flx_chaleur_sol": {
+        "index_obs": "flx_phi0_moy_c2_%60",
+        "index_model": "",
+        "title": "Flux de conduction dans le sol",
         "unit": "W/m²"
     },
     "t_surface": {
@@ -221,7 +226,7 @@ dico_params = {
     "cumul_RR": {
         "index_obs": "prp_rr_min_c2_%60_Som_%1800",
         "index_model": "",
-        "title": "Cumuls du pluie sur 30 min",
+        "title": "Cumuls de pluie (Obs: 30mn, ARO-ARP: 1h, MNH: 15mn)",
         "unit": "mm"
     },
     "altitude_CL": {
@@ -263,11 +268,12 @@ params = [
     "hum_rel",
     "vent_ff10m",
     "flx_mvt",
+    "tke",
     "flx_chaleur_sens",
     "flx_chaleur_lat",
-    "tke",
     "SWD",
-    "LWU",
+    "LWU",    
+    "flx_chaleur_sol",
     "t_surface",
     "t-1",
     "hu_couche1",
@@ -355,17 +361,12 @@ def selection_donnees(start_day, end_day):
                                     i = i + 1
 
                         # Les flux pour AROME et ARPEGE OPER sont agrégés entre H et H+1 : On les
-                        # replace à H:30 pour davantage de réalisme
+                        # replace à H:30 pour davantage de réalisme (A faire aussi pour les flux simulations user MNH et SURFEX force par AROME/ARPEGE
                         if param == 'flx_mvt' or param == 'flx_chaleur_sens' or param == 'flx_chaleur_lat' or param == 'SWD' or param == 'LWU':
-
                             if time is not None:
-
                                 i = 0
-
                                 for ts in time:
-
                                     time[i] = time[i] - datetime.timedelta(minutes=30)
-
                                     i = i + 1
 
         chart[param] = go.Figure()
@@ -384,7 +385,7 @@ def selection_donnees(start_day, end_day):
 
 
 today = datetime.date.today()
-# today=datetime.date.today()-timedelta(days=2)
+#today=datetime.date.today()-timedelta(days=15)
 tomorow = today + timedelta(days=1)
 yesterday = today - timedelta(days=1)
 end_day = today
@@ -542,12 +543,14 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
             date_run = start_day + datetime.timedelta(days=i)
             today_str = date_run.strftime('%Y%m%d')
             
-            #if id_user1 not in courbe_affichee and ['tmp_2m'] in data_user[today_str]: 
+            # TODO Ce bidouillage pour afficher qu'une légende empêche de cacher/afficher les courbes
+            # sur la période affichée 
+            if id_user not in courbe_affichee and 'tmp_2m' in data_user[today_str]: 
             #and isinstance(data_user[today_str]['tmp_2m'], (list, np.ndarray)):
-               # courbe_affichee.append(selection)
-                # afficher_legende = True
-            #else:
-                #afficher_legende = False
+               courbe_affichee.append(id_user)
+               afficher_legende = True
+            else:
+               afficher_legende = False
                 
             for param in params:
                 try:
@@ -560,12 +563,56 @@ def update_line(reseau1, reseau2, reseau3, reseau4, reseau5, start_day,
                                 line=dict(
                                     color='black',
                                     dash=types[j]),
-                                name='MésoNH modifié (id : ' + str(id_user) + ' )',showlegend=False))
+                                name='MésoNH modifié (id : ' + str(id_user) + ' )',showlegend=afficher_legende))
                         # print(data_user)
                 except KeyError:
                     pass
                 # Ici le try/except permet de ne rien afficher lorsque les données ne sont
                 # pas disponibles
+
+
+# Pour les 5 rejeux possibles de SURFEX, correspondants aux différents id_user :
+
+    # différentes valeurs pour l'attribut "dash" du paramètre "line" qui
+    # donnent le type de tracé (trait plein/pointillés/tirets/longs
+    # tirets/alternance tirets-points)
+    types = ['solid', 'dot', 'dash', 'longdash', 'dashdot']
+    for j, id_user in enumerate([id_user1, id_user2, id_user3, id_user4, id_user5]):
+        data_surfex_user = lecture_surfex.surfex_user(start_day, end_day, id_user, params)
+        nb_jour = (end_day - start_day).days
+
+        courbe_affichee_surfex=[]
+        for i in range(nb_jour + 1):
+            date_run = start_day + datetime.timedelta(days=i)
+            today_str = date_run.strftime('%Y%m%d')
+
+            if id_user not in courbe_affichee_surfex and 'tmp_2m' in data_surfex_user[today_str]: 
+            #and isinstance(data_user[today_str]['tmp_2m'], (list, np.ndarray)):
+                courbe_affichee_surfex.append(id_user)
+                afficher_legende = True
+            else:
+                afficher_legende = False
+
+            for param in params:
+                try:                    
+                    if isinstance(data_surfex_user[today_str][param],
+                                  (list, np.ndarray)):  # On vérifie qu'il y a des données
+                        if param == 'flx_mvt' or param == 'flx_chaleur_sens' or param == 'flx_chaleur_lat' or param == 'SWD' or param == 'LWU':
+                            xTime = data_surfex_user[today_str]['timeFlux']
+                        else :
+                            xTime = data_surfex_user[today_str]['time']
+                        chart[param].add_trace(
+                            go.Scatter(
+                                x=xTime,
+                                y=data_surfex_user[today_str][param],
+                                line=dict(
+                                    color='black',
+                                    dash=types[j]),
+                                name='SURFEX modifié (id : ' + str(id_user) + ' )',showlegend=afficher_legende))
+                        # print(data_user)
+                except KeyError:
+                    pass
+                # Ici le try/except permet de ne rien afficher lorsque les données ne sont
 
 
 # Pour les Obs de Météopole Flux, affichées par défaut car une seule option dans le widget :
@@ -1053,15 +1100,10 @@ def calcul_biais(start_day, end_day):
                 # Les flux pour AROME et ARPEGE OPER sont agrégés entre H et H+1 : On les
                 # replace à H:30 pour davantage de réalisme
                 if param == 'flx_mvt' or param == 'flx_chaleur_sens' or param == 'flx_chaleur_lat' or param == 'SWD' or param == 'LWU':
-
                     if time_mod is not None:
-
                         i = 0
-
                         for ts in time_mod:
-
                             time_mod[i] = time_mod[i] - datetime.timedelta(minutes=30)
-
                             i = i + 1
 
                 if values_mod is None or values_obs is None:
@@ -1174,9 +1216,7 @@ def calcul_biais(start_day, end_day):
         #on utilise le 'id_user' en tant que nom du 'model' pour le dictionnaire
         
         """
-
         for id_user in ["RM17", "LIMASB"]:
-
             
            #print("MODEL ID_USER :", id_user) 
            data_user = lecture_mesoNH.mesoNH_user(start_day,end_day,id_user,params) 
@@ -1253,9 +1293,9 @@ def calcul_biais(start_day, end_day):
                           
                except:
                   pass                          
+                         
         
       """                     
-
                             
                             
                             
@@ -1612,7 +1652,7 @@ def biais_moyen(start_day, end_day):
 
                        # Nom des colonnes du DF
                        colname = str(param + '_' + model + '_' + reseau)
-
+                       
                        try:
                            dico_loc = {colname: list(biais[param][model][reseau]['values'])}
                            df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
@@ -1665,7 +1705,11 @@ def biais_moyen(start_day, end_day):
     DF[cols] = DF[cols].astype('float')
 
     # Dataframe regroupé par heures
-    DF_CyDi = DF.groupby(DF.index.hour).mean()
+    try: #If missing data at first call 
+       DF_CyDi = DF.groupby(DF.index.hour).mean()
+    except:
+       DF_CyDi = pd.DataFrame(DF, index=DF.index)
+
 
     # Création du dictionnaire associé aux biais moyens + graphes html
     chartM = {}
@@ -1790,6 +1834,7 @@ def update_lineM(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
 
     biais_moy, chartM, graphM = biais_moyen(start_day, end_day)
 
+       
     # Puis, mise à jour des graphes :
 
     for param in params:
@@ -1982,7 +2027,7 @@ def update_lineM(reseau2, reseau3, reseau4, reseau5, start_day, end_day,
     for param in params:
 
         chartM[param].update_layout(height=450, width=800,
-                                    xaxis_title="Heure de la journéee",
+                                    xaxis_title="Heure de la journée",
                                     yaxis_title=str(dico_params[param]['unit']),
                                     title=dico_params[param]['title'])
 
