@@ -1128,13 +1128,13 @@ def calcul_biais(start_day, end_day):
                     df_biais = df_biais.dropna()
                     df_biais.index = pd.to_datetime(df_biais.index)
 
-                    date_list = df_biais.index.strftime("%Y-%m-%d %H:%M:%S").tolist()
-
                     # Passage du dataframes "biais" en listes pour intégrations dans les
                     # dictionnaires biais
                     biais[param][model][reseau]['values'] = list(df_biais[0])
                     biais[param][model][reseau]['time'] = list(df_biais.index)
-
+                    
+            # Pour MesoNH, une simulation = 1 jour, calcul du biais par jour
+            # TODO: optimisation
             nb_jour = (end_day - start_day).days
 
             for i in range(nb_jour):
@@ -1173,7 +1173,8 @@ def calcul_biais(start_day, end_day):
                 if today_str not in biais[param][model]:
 
                     biais[param][model][today_str] = {}
-
+                
+                # Pas de calcul du biais (obs-obs)
                 if model != 'Tf':
 
                     if values_obs is not None:
@@ -1654,6 +1655,7 @@ def biais_moyen(start_day, end_day):
                        colname = str(param + '_' + model + '_' + reseau)
                        
                        try:
+                           # Concaténation des biais moyens par paramètres/modèles/réseau (ARO/ARP)
                            dico_loc = {colname: list(biais[param][model][reseau]['values'])}
                            df_loc = pd.DataFrame(data=dico_loc, index=list(biais[param][model][reseau]['time']))
                            DF = pd.concat([DF, df_loc], axis=1)
@@ -1688,7 +1690,7 @@ def biais_moyen(start_day, end_day):
                        data_loc = {colname: list(biais[param][model][str(today_str)]['values'])}                                                                               
                        df_loc = pd.DataFrame(data=data_loc, index=list(biais[param][model][str(today_str)]['time']))
                        
-                       #Concaténation progressive
+                       #Concaténation progressive par jour
                        df_mnh = pd.concat([df_mnh, df_loc], axis=0)
 
                    except BaseException:
@@ -1696,7 +1698,7 @@ def biais_moyen(start_day, end_day):
                        df_mnh = pd.concat([df_mnh, df_nan], axis=0)
                        
                        pass
-
+            # Concatenation des biais moyen mesonh au DF avec les autres modèles
             DF = pd.concat([DF, df_mnh], axis=1)
 
    # Conversion colonnes type 'object' en type 'numeric'
@@ -2345,138 +2347,19 @@ rs_layout = html.Div([
 #   Rejeu MésoNH
 #
 #########################
+from GUI_MESONH import rejeu_gui
 
+# Instanciation de la GUI
+mesonhgui = rejeu_gui.get_mesonh_gui()
 
-############### Données ###############
-dico_vars_mesonh = {
-    "CTURB": {
-        "name": "Turbulence scheme",
-        "values": ["NONE", "TKEL"]
-    },
-    "CCLOUD": {
-        "name": "Microphysical scheme",
-        "values": ["NONE", "REVE", "KESS", "C2R2", "KHKO", "ICE3", "ICE4", "LIMA"]
-    },
-    "CRAD": {
-        "name": "Radiative transfer scheme",
-        "values": ["NONE", "TOPA", "FIXE", "ECMW", "ECRA"]
-    }}
+# Recuperation du Layout
+layout_mesonh_gui = mesonhgui.layout_mesonh_gui
 
+# Introduction du layout dans le layout principal
+mesoNH_layout = html.Div([layout_mesonh_gui])
 
-############### Widgets ###############
-
-calendrier = html.Div([
-    dcc.DatePickerRange(
-        id='my-date-picker-range',
-        first_day_of_week=1,
-        min_date_allowed=date(2015, 1, 1),
-        max_date_allowed=date(tomorow.year, tomorow.month, tomorow.day),
-        start_date=yesterday,
-        display_format="DD/MM/YYYY",
-        initial_visible_month=date(today.year, today.month, today.day),
-        end_date=yesterday,
-        minimum_nights=0,
-    ), html.Div(id='output-container-date-picker-range')], className="twelve columns", style={"text-align": "center", "justifyContent": "center"})
-
-
-all_params_id = []
-all_params_html = []
-inputs = []
-for var in dico_vars_mesonh:
-    title = html.Div(
-        dico_vars_mesonh[var]["name"] + ' :',
-        className="four columns",
-        style={
-            "text-align": "right",
-            "justifyContent": "center"})
-    multi_select_line = html.Div([
-        dcc.Dropdown(
-            id="multi_select_line_" + var,
-            options=[{"value": label, "label": label} for label in dico_vars_mesonh[var]["values"]],
-            multi=False,
-            clearable=False
-        )], className="six columns", style={"text-align": "center", "justifyContent": "center"})
-    all_params_html.append(title)
-    all_params_html.append(multi_select_line)
-    inputs.append(State("multi_select_line_" + var, 'value'))
-    all_params_id.append("multi_select_line_" + var)
-
-############### Callbacks ###############
-
-user_params = {}
-
-
-@app.callback(Output('my-output', 'children'), Input('button', 'n_clicks'),)
-def simu(n_clicks):
-    global user_params
-    if n_clicks is not None and n_clicks == 1:
-        user_params["id"] = shortuuid.uuid()[:4]
-        content = [html.H5([html.Span('Simulation en cours ! Vous pouvez fermer la page, votre simulation sera accessible avec l\'identifiant : '), html.Span(user_params["id"], style={"font-weight": "bold"}),
-                           html.Br(), html.Span('Gardez-le précieusement ! La simulation dure environ 5-10 min')])]
-        return content
-    else:
-        return None
-
-
-@app.callback(Output('loading-1', 'children'), [Input('button', 'n_clicks'),
-                                                Input('my-date-picker-range', 'start_date'),
-                                                Input('my-date-picker-range', 'end_date')], inputs)
-def loader_func(n_clicks, start_date, end_date, *arg):
-
-    time.sleep(1)
-    start_date = date.fromisoformat(start_date)
-    end_date = date.fromisoformat(end_date)
-    for i, var in enumerate(dico_vars_mesonh):
-        user_params[var] = arg[i]
-
-    if n_clicks is not None and n_clicks == 1:
-        nb_jour = (end_date - start_date).days
-        for i in range(nb_jour + 1):
-            date_run = start_date + timedelta(days=i)
-            today_str = date_run.strftime('%Y-%m-%dT00:00:00')
-            # print(start_date)
-            mesonh.MesoNH(
-                date_run=today_str,
-                model_couplage="AROME",
-                type_forcage="MODEL",
-                user_params=user_params)
-
-        return html.H2('Simulation terminée !')
-    else:
-        return None
-
-############### Layout ###############
-
-
-row1 = html.Div(children=all_params_html, className="twelve columns")
-
-mesoNH_layout = html.Div([
-    html.H1('Rejeu MésoNH'),
-    html.Br(),
-    calendrier,
-    html.Br(),
-    row1,
-    html.Br(),
-    html.Br(),
-    html.Div(
-        html.Button(
-            'Lancer la simulation',
-            id='button'),
-        style={
-            "margin-top": "100px"}),
-    html.Br(),
-    html.Br(),
-    html.Div(id='my-output'),
-    html.Br(),
-    html.Br(),
-    html.Br(),
-    dcc.Loading(
-        id="loading-1",
-        type="default",
-        children=html.Div(id="loading-output-1")
-    )
-], className="twelve columns", style={"text-align": "center", "justifyContent": "center"})
-
+# Mise en place des callbacks associees a la GUI
+mesonhgui.start_callbacks(app)
 
 ########################
 #
