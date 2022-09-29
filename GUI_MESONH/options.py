@@ -1,13 +1,13 @@
 path_gui="GUI_MESONH"
 
 Options_init = {
-#            - 'divskeys':{}, 'divsvalues':{} doivent être des dics nuls (sont remplis par la suite)
+#            - 'divskeys':{}, 'divsvalues':{} doivent Ãªtre des dics nuls (sont remplis par la suite)
 #            - len(catName) must be == len(divName). empty name for catName is possible
 #            - 'name' is the latex user's guide convention with \_
 #            - len(buttonName) must be == len(divName) + 1 (with the first button = the general id button name for the sidebar
 #            - empty name for buttonName is possible
 'TURBn': {'name': 'NAM\_TURBn', 'model': 'mesonh',
-        'catName': ['Général','Subgrid condensation','Online diagnostics'],
+        'catName': ['General','Subgrid condensation','Online diagnostics'],
         'buttonName': ['NAMTURBn','NAMTURBngeneral','NAMTURBnsbg','NAMTURBndiag'],
         'divName': ['NAMTURBngeneral','NAMTURBnsbg','NAMTURBndiag'],
         'divskeys':{}, 'divsvalues':{}, 'mainDiv':{},
@@ -22,10 +22,10 @@ Options_init = {
                 'CTOM':{'type':'C', 'def':'NONE', 'cat': 0,
                             'options': [{"label": "NONE", "value": "NONE"},
                                         {"label": "TM06", "value": "TM06"}]},
-                'LRMC01':{'type':'L', 'def': 'False', 'cat': 0},
-                'XKEMIN':{'type':'Input','min': 0, 'max': 10, 'cat': 0, 'def': 0.01},
+                'LRMC01':{'type':'L', 'def': True, 'cat': 0},
+                'XKEMIN':{'type':'Input','min': 0, 'max': 10, 'cat': 0, 'def': 0.0000000001},
                 'XCEDIS':{'type':'Input','min': 0, 'max': 10, 'cat': 0, 'def': 0.84},
-                'LSUBG_COND':{'type':'L', 'def': 'False', 'cat': 1},
+                'LSUBG_COND':{'type':'L', 'def': True, 'cat': 1},
                 'CCONDENS':{'type':'C', 'def':'CB02', 'cat': 1,
                             'options': [{"label": "CB02", "value": "CB02"},
                                         {"label": "GAUS", "value": "GAUS"}]},
@@ -45,8 +45,8 @@ Options_init = {
                 'CSUBG_MF_PDF':{'type':'C', 'def':'TRIANGLE', 'cat': 1,
                             'options': [{"label": "NONE", "value": "NONE"},
                                         {"label": "TRIANGLE", "value": "TRIANGLE"}]},
-                'LTURB_FLX':{'type':'L', 'def': 'False', 'cat': 2},
-                'LTURB_DIAG':{'type':'L', 'def': 'False', 'cat': 2},
+                'LTURB_FLX':{'type':'L', 'def': True, 'cat': 2},
+                'LTURB_DIAG':{'type':'L', 'def': True, 'cat': 2},
                 }
         },
 'PARAMn': {'name': 'NAM\_PARAMn', 'model': 'mesonh',
@@ -111,8 +111,8 @@ def get_string_keysvalues(options):
     contentbyline = fin.readlines()
     #for i in contentbyline:
     #    if 'CALL TEST_NAM_VAR' in i:
-            # Coder r�cup�ration de la cl� remplie + des valeurs 
-            # Puis boucler sur toutes les namelists et params; si une des cl� matchs, on remplit
+            # Coder récupération de la clé remplie + des valeurs 
+            # Puis boucler sur toutes les namelists et params; si une des clé matchs, on remplit
             
 def get_default_inf90(options,nam,key):
     fin = open(path_gui+'/MNH/default_desfmn.f90', 'r')
@@ -131,14 +131,19 @@ def get_default_inf90(options,nam,key):
                 val = i[len(keyegal):]
             #Control on val
             if 'FALSE' in val:
-                val = 'False'
+                val = False
             elif 'TRUE' in val:
-                val = 'True'
+                val = True
             elif '\'' in val: # String found
                 val = val
             else:
                 try: # if number (real or int)
+                    print('Valeur numerique possible')
+                    print(val)
                     val = float(val)
+                    print(key[0])
+                    if key[0] == 'N': # If name of the key start with a N, val must be int
+                        val = int(val)
                 except:
                     pass
             break
@@ -157,14 +162,16 @@ def get_default_inf90(options,nam,key):
                     val = i[len(keyegal):]
                 #Control on val
                 if 'FALSE' in val:
-                    val = 'False'
+                    val = False
                 elif 'TRUE' in val:
-                    val = 'True'
+                    val = True
                 elif '\'' in val: # String found
                     val = val
                 else:
                     try: # if number (real or int)
                         val = float(val)
+                        if key[0] == 'N':
+                           val = int(val)
                     except:
                         pass
                 break    
@@ -274,19 +281,29 @@ def create_options():
     print("Set all keys for all namelists")
     Options = get_all_keys(Options)
 
-    # Get Default values
-    print("Get Default values")
-    Options = get_default_values(Options)
-    
     # Set keys types
     print("Set keys types")
     Options = get_keys_types(Options)
+
+    # Get Default values
+    print("Get Default values")
+    Options = get_default_values(Options)
     
     #TODO  Get possible values for strings keys
     #Options = get_string_keysvalues(Options)
     
     # Set particular values
     Options['PARAM_KAFRn']['keys']['XDTCONV']['def'] = 300.0 # The true default value in mesonh code is MAX(300,XTSTEP)
+    # PARAM_LIMA : ces options nexistent plus dans le code ?
+    Options['PARAM_LIMA']['keys']['XALPHAS']['def'] = 1.0
+    Options['PARAM_LIMA']['keys']['XIFN_CONC']['def'] = 100.0
+    Options['PARAM_LIMA']['keys']['XALPHAI']['def'] = 1.0
+    Options['PARAM_LIMA']['keys']['XNUI']['def'] = 1.0
+    Options['PARAM_LIMA']['keys']['XNUS']['def'] = 1.0
+    Options['PARAM_LIMA']['keys']['XALPHAG']['def'] = 1.0
+    Options['PARAM_LIMA']['keys']['XNUG']['def'] = 1.0
+    
+    Options['PARAM_ECRADn']['keys']['XCLOUD_FRAC_STD']['def'] = 1.0 #_JPRB
     
     # Selection of specific namelist (for testing)
     Namelists_toshow = ('PARAMn','TURBn','PARAM_LIMA','PARAM_ICE','PARAM_RADn','PARAM_ECRADn',

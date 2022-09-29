@@ -29,11 +29,8 @@ import shortuuid
 
 import glob
 
-# '/cnrm/ktrm/stagiaire/mosai_2021/DEV/web_20210402/'
 path = '/home/manip/MeteopoleX/models/MNH-V5-5-0/MY_RUN/OPER/'
-# in case of offline work, need to link to /USER/
-#path = '/home/manip/MeteopoleX/models/MNH-V5-5-0/MY_RUN/USER/'
-# '/cnrm/ktrm/stagiaire/mosai_2021/DEV/MESONH/'
+path_user = '/home/manip/MeteopoleX/models/MNH-V5-5-0/MY_RUN/USER/'
 path_output = '/home/manip/MeteopoleX/models/runs/OUTPUT/MESONH/'
 
 
@@ -86,11 +83,12 @@ class MesoNH:
         self.path_output = path_output
         self.li_models_couplage = ['AROME', 'ARPEGE']
         self.rho = 1
+        print(user_params)
 
         # On vérifie que user_params et bien un dictionnaire, on détecte s'il
         # s'agit d'un rejeu ou non
         self.rejeu, self.user_params = self.check_user_params(user_params)
-
+        
         # On vérifie que le type de forçage est soit MODEL soit OBS :
         self.type_forcage = self.check_type_forcage(type_forcage)
 
@@ -116,22 +114,22 @@ class MesoNH:
         ##########################
         # ETAPES DE MODELISATION #
         ##########################
-
+        print('Parametrize')
         # 1) Paramétrisation des namelists
         self._parametrize()
-
+        print('Couplage')
         # 2) Couplage avec le modèle
         self._couplage()
-
+        print('Run')
         # 3) Intégration
         self._run()
-
+        print('Diag')
         # 4) Diagnostique
         self._diag()
-
+        print('Concat and rename')
         # 5) Transformation puis transmission des fichiers vers path_output
         self._concat_rename()
-
+        print('Clean')
         # 6) Suppression des fichiers indésirables, nettoyage du dossier path
         self._clean()
 
@@ -151,7 +149,7 @@ class MesoNH:
         """
 
         # Paramétrisation de la namelist PRE_IDEA1
-        with open(path + 'bases_nam/PRE_IDEA1.nam', 'r') as f:
+        with open(self.path[:-16] + 'bases_nam/PRE_IDEA1.nam', 'r') as f:
             namelist = f.read()
 
         try:
@@ -176,7 +174,7 @@ class MesoNH:
             WG2 = (Dvar['X001WG2']-0.09)*3.333
             WG3 = (Dvar['X001WG3']-0.08)*3.334
             f.close()
-            print('Les paramètres du sol issus du modèle ont pu être utilisés, chouette !')
+            print('Les paramètres du sol issus du modèle ont pu être utilisés')
         except BaseException:
             print('Utilisation des paramètres du sol par défaut')
             WG1 = self.trunc(self.coupl_data['q'][0][-1])
@@ -232,7 +230,7 @@ class MesoNH:
         else:
             exsegfile = "OPER"
 
-        with open(path + 'bases_nam/EXSEG1_' + exsegfile + '.nam', 'r') as f:
+        with open(self.path[:-16] + 'bases_nam/EXSEG1_' + exsegfile + '.nam', 'r') as f:
             namelist += f.read()
 
         for namelistgroup in self.user_params:
@@ -275,7 +273,7 @@ class MesoNH:
         namelist += ZFRC_part
         namelist += "\n"
 
-        print(namelist)
+        #print(namelist)
 
         with open(self.path + 'PRE_IDEA1.nam', 'w') as f:
             f.write(namelist)
@@ -290,8 +288,9 @@ class MesoNH:
         Intégration du modèle, appel d'un bash dédié.
         """
 
-        call('cp ' + path + 'run ' + self.path + 'run', shell='True')
-        call('cd ' + self.path + ' ; run', shell='True')
+        call('cp ' + self.path[:-16] + 'run ' + self.path + 'run', shell='True')
+        call('cd ' + self.path + ' ; ./run', shell='True')
+        print('End of run')
 
     def _diag(self):
         """
@@ -303,12 +302,12 @@ class MesoNH:
         Etape de diagnostique puis concaténation dans le fichier de backup pour
         chaque échéance.
         """
-        call('cp ' + path + 'diag ' + self.path + 'diag', shell='True')
-
+        call('cp ' + self.path[:-16] + 'diag ' + self.path + 'diag', shell='True')
         for YINIFILE in glob.glob(self.path + 'REF*.nc'):
             if '000.nc' not in YINIFILE:
+                print(YINIFILE)
                 namelist = ''
-                with open(path + 'bases_nam/DIAG1.nam', 'r') as f:
+                with open(self.path[:-16] + 'bases_nam/DIAG1.nam', 'r') as f:
                     namelist += f.read()
 
                 namelist = namelist.replace("{YINIFILE}",
@@ -317,8 +316,9 @@ class MesoNH:
                 with open(self.path + 'DIAG1.nam', 'w') as f:
                     f.write(namelist)
 
-                call('cd ' + self.path + ' ; diag', shell='True')
+                call('cd ' + self.path + ' ; ./diag', shell='True')
                 call('ncks -A -v HBLTOP ' + YINIFILE[:-3] + '_DIAG.nc ' + YINIFILE, shell='True')
+        print('_diag termine')
 
     def _concat_rename(self):
         """
@@ -502,16 +502,20 @@ class MesoNH:
         """
 
         if isinstance(user_params, dict):
-            self.path += "simulation_"
             if 'id' in user_params:
                 rejeu = True
+                self.path = path_user + 'simulation_'
                 dos = 'USER/'
                 self.path += user_params['id'] + '/'
             else:
                 rejeu = False
                 dos = 'OPER/'
-                self.path += shortuuid.uuid()[:8] + '/'
-            os.mkdir(self.path)
+                self.path = path + 'simulation_' + shortuuid.uuid()[:4] + '/'
+            try:
+                os.mkdir(self.path)
+            except:
+                pass
+            print('Work in ' + self.path)
             self.path_output += dos
             return rejeu, user_params
         else:
@@ -555,7 +559,10 @@ class MesoNH:
         self.path_output += date_format_dos + '/'
         output_file = self.path_output + 'MESONH_' + self.model_couplage_aida + '_' + date_format_dos + '.nc'
         if os.path.exists(output_file):
-            raise FileExistsError('Le modèle a déjà tourné pour cette échéance')
+            if 'USER' in self.path:
+                print('Dossier existe deja, simulation se lance tout de meme')
+            else:
+                raise FileExistsError('Le modèle a déjà tourné pour cette échéance')
         else:
             if not os.path.exists(self.path_output):
                 os.mkdir(self.path_output)
@@ -735,7 +742,7 @@ class MesoNH:
                 vec_hs, times, header = read_aida.donnees(
                     doy1, doy2, year, "flx_le_Chb_%1800", "Tf")
 
-                print(vec_le)
+                #print(vec_le)
 
                 nb_val_manquantes = len(vec_le.mask.nonzero()[0])
                 pourc_manquant = nb_val_manquantes / len(vec_le) * 100
