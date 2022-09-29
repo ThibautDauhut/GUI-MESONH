@@ -107,11 +107,11 @@ def get_string_keysvalues(options):
     # Fill Options values for string type keys
     fin = open('MNH/read_exsegn.f90','r')
     contentbyline = fin.readlines()
-    for i in contentbyline:
-        if 'CALL TEST_NAM_VAR' in i:
+    #for i in contentbyline:
+        #if 'CALL TEST_NAM_VAR' in i:
             # Coder récupération de la clé remplie + des valeurs 
             # Puis boucler sur toutes les namelists et params; si une des clé matchs, on remplit
-            
+
 def get_default_inf90(options,nam,key):
     fin = open('MNH/default_desfmn.f90', 'r')
     contentbyline = fin.readlines()

@@ -10,6 +10,7 @@ import shortuuid
 
 def fill_user_params(options):
     userparam = {}
+    value_found = 0 # Les valeurs sont rangées dans l'ordre
     for nam in options.keys():
         userparam[nam] = {}
         NAMname = options[nam]['name'].replace('\\','') #Namelist name with _
@@ -20,13 +21,17 @@ def fill_user_params(options):
                         key_name = key_obj.id.replace('-sel','')
                         key_name = key_name.replace('\\','')
                         key_name = key_name.replace(NAMname,'')
-                        val = key_obj.value
-                        
+                        #val = key_obj.value
+                        val = updated_user_params[value_found]
+                        value_found += 1
                     else: # Boolean, String are embedded in a container (list of size 1)
                         key_name = key_obj.children[0].id.replace('-sel','')
                         key_name = key_name.replace('\\','')
                         key_name = key_name.replace(NAMname,'')
-                        val = key_obj.children[0].value
+                        #val = key_obj.children[0].value
+                        val = updated_user_params[value_found]
+                        value_found += 1
+
                 userparam[nam][key_name] = val
                 # remove \n in strings value and extra-quotes          
                 if 'str' in str(type(userparam[nam][key_name])):
@@ -158,6 +163,7 @@ LineTopStatic = html.Div([
 
 # Upper row dates and START!
 SimulationTimeandStart = html.Div([
+    html.H4('',id='empty-layout'), # Empty layout for updating the key-val divs without chaning the layout
     html.Div(children=[
     dcc.DatePickerRange(
         id='my-date-picker-range',
@@ -191,18 +197,37 @@ print("Layout Master done")
 
 # Init
 user_params = {} # A remplir avec les options TODO
-print(Options['PARAM_KAFRn']['keys'])
+
 def start_callbacks():
-  inputs=[]
+  inputs_label_fordoc=[]
+  inputs_keyval=[]
   suffix_label='labdoc'
   # Create the list of Inputs for all labels
-  print("Create the list of Inputs for all labels")
   for nam in Options.keys():
       for keys in Options[nam]['keys'].keys():
           name_label=Options[nam]['name']+keys
-          inputs.append(Input(name_label+suffix_label,'n_clicks'))
+          inputs_label_fordoc.append(Input(name_label+suffix_label,'n_clicks'))
   
-  # Callback du boutton de lancement de la simulation
+  # Create the lists of Inputs for all divs key-values
+  for nam in Options.keys():
+     for divName in Options[nam]['divName']:
+         for component in Options[nam]['divsvalues'][divName].children:
+             if 'Input' in str(type(component)):
+                 inputs_keyval.append(Input(component.id,'value'))
+             elif 'Container' in str(type(component)):
+                 inputs_keyval.append(Input(component.children[0].id,'value'))
+
+  @app.callback(Output('empty-layout', 'children'), inputs_keyval)
+  def update_value(*new_value):
+      global updated_user_params  # Pour pouvoir être utilisé dans fill_user_params
+      # Update the value of a key (in divs), to prepare the user_param dict to be sent to mesonh.py
+      # Le champs Output du callback ne sert pas ici
+      # On update qu'une liste de valeur plutôt que tout Options (trop lourd) ==> fait qu'une fois au lancement
+      # de la simulation par la fonction fill_user_params
+      updated_user_params = new_value
+      return None
+
+# Callback du boutton de lancement de la simulation
   @app.callback(Output('my-output', 'children'), Input('button', 'n_clicks'),)
   def simu(n_clicks):
       global user_params
@@ -225,10 +250,11 @@ def start_callbacks():
   # Callback de l'attente de la simulation et du lancement du backend (mesonh.py)
   @app.callback(Output('loading-1', 'children'), [Input('button', 'n_clicks'),
                                                   Input('my-date-picker-range', 'start_date'),
-                                                  Input('my-date-picker-range', 'end_date')], inputs)
+                                                  Input('my-date-picker-range', 'end_date')])
   def loader_func(n_clicks, start_date, end_date, *arg):
       if start_date is not None: #First call of the app
           # Fill the user_params sent to mesonh.py by the key-value in Options
+          print(updated_user_params)
           user_params = fill_user_params(Options)
           print(user_params)
           time.sleep(1)
@@ -261,7 +287,7 @@ def start_callbacks():
   # Callback qui actualise la documentation (container-userguide)
   @app.callback(
       Output('container-userguide', 'children'),
-      inputs)
+      inputs_label_fordoc)
   def displayClick(*args):
       changed_id = [p['prop_id'] for p in callback_context.triggered][0]
       #changed_id is a key name + 'labdoc.' + 'n_clicks'
