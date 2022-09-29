@@ -228,7 +228,8 @@ def mesoNH_user(start_day, end_day, id_user, params):
                         if param == "tke":
                             data_user[today_str][param] = (f[groupSBG].variables['SBG_TKE'][:, 1]+f[groupSBG].variables['SBG_TKE'][:, 2])/2
                         if param == "cumul_RR":
-                            data_user[today_str][param] = (f[groupGLOB].variables['INPRT_GLOB'][:])/96
+                            #data_user[today_str][param] = (f[groupGLOB].variables['INPRT_GLOB'][:])/96
+                            data_user[today_str][param] = (f[groupSBG].variables['SBG_TKE'][:])/96
                             
 #Paramètres microphysiques simulés
                         if param == "LWP" :
