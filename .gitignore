@@ -1,4 +1,5 @@
 nohup.out
-REJEU_OFFLINE/MNH
-REJEU_OFFLINE/SURFEX
-REJEU_OFFLINE/__pycache__/
+src/MNH
+src/SURFEX
+src/__pycache__/
+
